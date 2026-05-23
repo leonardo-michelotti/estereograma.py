@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.log
+.env
+.DS_Store
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+
+# Build / dist
+build/
+dist/
+
+# Artefatos locais de validação (regeneráveis via CLI do gerador)
+exemplos/

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block titulo %}{{ artigo.titulo }} — estereograma.py{% endblock %}
+
+{% block conteudo %}
+<article class="artigo">
+    <header class="artigo-header">
+        <p class="trilha"><a href="/aprender">← aprender</a> / parte {{ "%02d" % artigo.ordem }}</p>
+        <h1>{{ artigo.titulo }}</h1>
+        {% if artigo.resumo %}<p class="lead">{{ artigo.resumo }}</p>{% endif %}
+    </header>
+
+    <div class="artigo-corpo">
+        {{ artigo.html | safe }}
+    </div>
+
+    {% if artigo.fontes %}
+    <aside class="fontes">
+        <h2>Fontes</h2>
+        <ul>
+            {% for f in artigo.fontes %}<li>{{ f | safe }}</li>{% endfor %}
+        </ul>
+    </aside>
+    {% endif %}
+
+    <nav class="artigo-nav">
+        <div class="prev">
+            {% if anterior %}
+            <a href="/aprender/{{ anterior.slug }}">← {{ anterior.titulo }}</a>
+            {% endif %}
+        </div>
+        <div class="next">
+            {% if proximo %}
+            <a href="/aprender/{{ proximo.slug }}">{{ proximo.titulo }} →</a>
+            {% endif %}
+        </div>
+    </nav>
+</article>
+{% endblock %}

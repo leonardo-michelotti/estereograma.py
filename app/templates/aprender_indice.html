@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block titulo %}aprender — estereograma.py{% endblock %}
+
+{% block conteudo %}
+<section class="aprender-indice">
+    <h1>aprender</h1>
+    <p class="lead">
+        Um guia em seis partes — do "o que diabos é isso" até a fórmula
+        matemática que o algoritmo executa pixel a pixel. Pode ler em ordem
+        ou pular pro tópico que te interessa.
+    </p>
+
+    <ol class="lista-artigos">
+        {% for a in artigos %}
+        <li>
+            <a href="/aprender/{{ a.slug }}">
+                <span class="numero">{{ "%02d" % a.ordem }}</span>
+                <span class="conteudo">
+                    <strong>{{ a.titulo }}</strong>
+                    {% if a.resumo %}<small>{{ a.resumo }}</small>{% endif %}
+                </span>
+            </a>
+        </li>
+        {% endfor %}
+    </ol>
+</section>
+{% endblock %}

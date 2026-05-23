@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block titulo %}estereograma.py — portfólio de estereogramas{% endblock %}
+
+{% block conteudo %}
+<section class="hero">
+    <h1>tem uma imagem 3D escondida em cada padrão</h1>
+    <p class="lead">
+        Estereogramas — também conhecidos como <em>Magic Eye</em> — são imagens
+        2D que escondem cenas em três dimensões. Esse site é um portfólio
+        autoral e uma ferramenta pra você gerar o seu.
+    </p>
+    <div class="cta">
+        <a class="botao primario" href="/playground">abrir o playground</a>
+    </div>
+</section>
+
+<section class="explicador">
+    <h2>como ver o 3D</h2>
+    <ol>
+        <li>Aproxime o rosto da tela.</li>
+        <li>Olhe "através" da imagem, como se estivesse focando em algo atrás dela.</li>
+        <li>Afaste lentamente — a imagem 3D vai emergir.</li>
+        <li>Persistência ajuda. Os olhos aprendem com a prática.</li>
+    </ol>
+</section>
+{% endblock %}

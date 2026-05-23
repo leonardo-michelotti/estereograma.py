@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block titulo %}galeria — estereograma.py{% endblock %}
+
+{% block conteudo %}
+<section class="galeria">
+    <h1>galeria</h1>
+    <p class="lead">
+        Coletânea curada de estereogramas em domínio público ou licenças
+        abertas, com créditos a quem fez.
+    </p>
+
+    {% if obras %}
+    <div class="grid-galeria">
+        {% for o in obras %}
+        <a href="/galeria/{{ o.slug }}" class="card-obra">
+            <img src="{{ o.imagem }}" alt="{{ o.titulo }}">
+            <strong>{{ o.titulo }}</strong>
+            <small>{{ o.autor }} · {{ o.licenca }}</small>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="placeholder">
+        Galeria em curadoria — em breve obras de Wikimedia Commons,
+        arquivo de Christopher Tyler e CC do Flickr.
+    </p>
+    {% endif %}
+</section>
+{% endblock %}
