@@ -26,6 +26,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 ARTIGOS = carregar_artigos(CONTENT_DIR / "aprender")
+templates.env.globals["artigos_global"] = ARTIGOS
 
 
 @app.get("/", response_class=HTMLResponse)

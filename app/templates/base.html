@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block titulo %}estereograma.py{% endblock %}</title>
-    <meta name="description" content="Portfólio e ferramenta interativa de geração de estereogramas (autostereograms, Magic Eye) em Python.">
+    <meta name="description" content="Hub educativo, galeria curada e gerador interativo de estereogramas (autostereograms / Magic Eye) em Python.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
@@ -24,8 +24,35 @@
     <main>
         {% block conteudo %}{% endblock %}
     </main>
-    <footer>
-        <p>feito em python — <a href="https://github.com" rel="noopener">código</a></p>
+
+    <footer class="site-footer">
+        <div class="footer-grid">
+            <div class="col-marca">
+                <p class="footer-logo">estereograma<span>.py</span></p>
+                <p class="footer-tagline">um livro-guia, uma galeria e um gerador de estereogramas, feito em python.</p>
+            </div>
+
+            <div class="col-links">
+                <h4>aprender</h4>
+                <ul>
+                    {% for a in artigos_global %}
+                    <li><a href="/aprender/{{ a.slug }}">{{ a.titulo|lower }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="col-links">
+                <h4>projeto</h4>
+                <ul>
+                    <li><a href="https://github.com/leonardo-michelotti/estereograma.py" rel="noopener">código no github</a></li>
+                    <li><a href="/galeria">galeria curada</a></li>
+                    <li><a href="/playground">playground</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>código sob mit · conteúdo sob cc by-sa 4.0</p>
+        </div>
     </footer>
 </body>
 </html>

@@ -1,26 +1,104 @@
 {% extends "base.html" %}
-{% block titulo %}estereograma.py — portfólio de estereogramas{% endblock %}
+{% block titulo %}estereograma.py — veja com os dois olhos{% endblock %}
 
 {% block conteudo %}
 <section class="hero">
-    <h1>tem uma imagem 3D escondida em cada padrão</h1>
-    <p class="lead">
-        Estereogramas — também conhecidos como <em>Magic Eye</em> — são imagens
-        2D que escondem cenas em três dimensões. Esse site é um portfólio
-        autoral e uma ferramenta pra você gerar o seu.
-    </p>
-    <div class="cta">
-        <a class="botao primario" href="/playground">abrir o playground</a>
+    <div class="hero-texto">
+        <p class="kicker">estereograma<span>.py</span></p>
+        <h1>veja com os <em>dois</em> olhos.</h1>
+        <p class="lead">
+            Imagens 2D que escondem cenas 3D — quando você olha do jeito certo,
+            uma forma emerge. Aqui você aprende como funcionam, vê uma galeria
+            curada e gera os seus próprios.
+        </p>
+        <div class="cta">
+            <a href="/aprender" class="botao primario">começar a aprender</a>
+            <a href="/playground" class="botao terciario">pular pro playground →</a>
+        </div>
+    </div>
+
+    <div class="hero-stereo">
+        <input type="checkbox" id="reveal-hero" class="reveal-toggle">
+        <div class="hero-stereo-imagens">
+            <img src="{{ url_for('static', path='/img/hero/coracao_estereo.png') }}"
+                 alt="Estereograma de um coração — cruze os olhos para revelar a figura escondida"
+                 class="img-stereo">
+            <img src="{{ url_for('static', path='/img/hero/coracao_depth.png') }}"
+                 alt="A figura escondida: um coração"
+                 class="img-reveal">
+        </div>
+        <label for="reveal-hero" class="reveal-btn">
+            <span class="lig">esconder figura</span>
+            <span class="des">ver figura escondida</span>
+        </label>
     </div>
 </section>
 
-<section class="explicador">
-    <h2>como ver o 3D</h2>
-    <ol>
-        <li>Aproxime o rosto da tela.</li>
-        <li>Olhe "através" da imagem, como se estivesse focando em algo atrás dela.</li>
-        <li>Afaste lentamente — a imagem 3D vai emergir.</li>
-        <li>Persistência ajuda. Os olhos aprendem com a prática.</li>
-    </ol>
+<section class="tutorial">
+    <h2>nunca conseguiu ver?</h2>
+    <div class="tutorial-grid">
+        <div class="tutorial-passos">
+            <ol>
+                <li>aproxime o rosto da tela, quase encostando.</li>
+                <li>relaxe o foco — olhe "através" da imagem, como se mirasse algo atrás dela.</li>
+                <li>afaste devagar mantendo o relaxamento.</li>
+                <li>o cérebro leva alguns segundos. quando trava, a forma surge inteira.</li>
+            </ol>
+            <p class="tutorial-nota">
+                persistência ajuda. cerca de 5–10% das pessoas não conseguem fundir —
+                <a href="/aprender/visao-binocular">por que isso acontece</a>.
+            </p>
+        </div>
+
+        <div class="tutorial-imagem">
+            <input type="checkbox" id="reveal-mini" class="reveal-toggle">
+            <div class="hero-stereo-imagens">
+                <img src="{{ url_for('static', path='/img/hero/mini_estereo.png') }}"
+                     alt="Mini estereograma de uma esfera para praticar"
+                     class="img-stereo">
+                <img src="{{ url_for('static', path='/img/hero/mini_depth.png') }}"
+                     alt="A figura escondida: uma esfera"
+                     class="img-reveal">
+            </div>
+            <label for="reveal-mini" class="reveal-btn small">
+                <span class="lig">esconder</span>
+                <span class="des">ver resposta</span>
+            </label>
+        </div>
+    </div>
+</section>
+
+<section class="portas">
+    <h2>três portas</h2>
+    <div class="portas-grid">
+        <a href="/aprender" class="porta">
+            <span class="porta-num">01</span>
+            <h3>aprender</h3>
+            <p>seis partes, de wheatstone 1838 ao algoritmo que você acaba de usar.</p>
+            <span class="porta-seta">→</span>
+        </a>
+        <a href="/galeria" class="porta">
+            <span class="porta-num">02</span>
+            <h3>galeria</h3>
+            <p>coleção curada de obras em domínio público e licença aberta.</p>
+            <span class="porta-seta">→</span>
+        </a>
+        <a href="/playground" class="porta">
+            <span class="porta-num">03</span>
+            <h3>playground</h3>
+            <p>escolha uma forma, ajuste profundidade, gere em segundos.</p>
+            <span class="porta-seta">→</span>
+        </a>
+    </div>
+</section>
+
+<section class="sobre">
+    <h2>sobre o projeto</h2>
+    <p>
+        feito do zero em python por <a href="https://github.com/leonardo-michelotti">leonardo michelotti</a>.
+        gerador usa o algoritmo de classes de equivalência (<em>thimbleby, inglis & witten 1994</em>),
+        site em fastapi + jinja + htmx, conteúdo em markdown. tudo de código aberto
+        — <a href="https://github.com/leonardo-michelotti/estereograma.py" rel="noopener">no github</a>.
+    </p>
 </section>
 {% endblock %}
