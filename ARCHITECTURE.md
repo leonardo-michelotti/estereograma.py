@@ -59,36 +59,54 @@ site:
 estereograma.py/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py                 # [Fase 2] FastAPI app + rotas
+│   ├── main.py                 # FastAPI app + todas as rotas
+│   ├── content_loader.py       # loader de Markdown/YAML → list[Artigo]
 │   ├── stereogram/             # ★ NÚCLEO — gerador independente
 │   │   ├── __init__.py
 │   │   ├── __main__.py         # CLI: python -m app.stereogram
 │   │   ├── generator.py        # função principal gerar_estereograma()
 │   │   ├── patterns.py         # depth maps sintéticos (esfera, coração, texto)
-│   │   └── presets.py          # [Fase 2] catálogo de presets do playground
-│   ├── templates/              # [Fase 2] Jinja
-│   │   ├── base.html
-│   │   ├── index.html
+│   │   └── presets.py          # catálogo de presets do playground
+│   ├── content/
+│   │   └── aprender/           # artigos em Markdown com frontmatter YAML
+│   │       ├── o-que-sao.md    # ✅ completo (~1 000 palavras)
+│   │       ├── historia.md     # 🚧 skeleton
+│   │       ├── visao-binocular.md
+│   │       ├── teoria.md
+│   │       ├── calculo.md
+│   │       └── algoritmo.md
+│   ├── templates/              # Jinja2
+│   │   ├── base.html           # layout global (header + footer 3 colunas)
+│   │   ├── index.html          # home D1
+│   │   ├── aprender_indice.html
+│   │   ├── artigo.html
 │   │   ├── galeria.html
 │   │   ├── playground.html
-│   │   ├── como_funciona.html
 │   │   └── partials/
-│   │       └── resultado.html
+│   │       └── resultado.html  # fragmento HTMX (imagem gerada)
 │   └── static/
 │       ├── css/
-│       ├── img/
-│       │   ├── galeria/        # obras autorais (.png) + reveals (.gif)
-│       │   └── presets/        # depth maps gerados por scripts/gerar_presets.py
-│       └── galeria.yaml        # [Fase 3] metadata das obras
+│       │   └── style.css       # design system completo (~550 linhas)
+│       └── img/
+│           ├── hero/           # PNGs gerados por scripts/gerar_hero.py
+│           │   ├── coracao_estereo.png
+│           │   ├── coracao_depth.png
+│           │   ├── mini_estereo.png
+│           │   └── mini_depth.png
+│           ├── galeria/        # obras autorais (.png) + reveals (.gif)
+│           └── presets/        # depth maps gerados por scripts/gerar_presets.py
 ├── scripts/
-│   └── gerar_presets.py        # roda patterns.* e salva PNGs em static/img/presets/
+│   ├── gerar_presets.py        # gera depth maps de preset em static/img/presets/
+│   └── gerar_hero.py           # gera os PNGs estáticos do hero em static/img/hero/
 ├── tests/
 │   ├── __init__.py
 │   └── test_generator.py
-├── exemplos/                   # PNGs gerados para validação manual (gitignore opcional)
+├── .github/
+│   └── workflows/
+│       └── ci.yml              # matrix 3.11+3.12, ruff + pytest
 ├── pyproject.toml
-├── Dockerfile                  # [Fase 2] pra Fly.io
-├── fly.toml                    # [Fase 2]
+├── CHANGELOG.md
+├── CONTRIBUTING.md
 ├── README.md
 └── ARCHITECTURE.md             # este arquivo
 ```
@@ -214,21 +232,78 @@ Reusável em scripts e CI. Não depende do FastAPI.
 
 ---
 
-## 5. Camada web (Fase 2+)
+## 5. Camada web
 
 ### 5.1 Rotas
 
-| Rota | Método | Renderiza | Fase |
+| Rota | Método | Renderiza | Status |
 |---|---|---|---|
-| `/` | GET | `index.html` (hero + CTA) | 2 |
-| `/playground` | GET | `playground.html` (form) | 2 |
-| `/playground/gerar` | POST | `partials/resultado.html` (HTMX swap) | 2 |
-| `/galeria` | GET | `galeria.html` (grid) | 3 |
-| `/galeria/{slug}` | GET | detalhe da obra | 3 |
-| `/como-funciona` | GET | `como_funciona.html` | 5 |
-| `/static/*` | GET | arquivos estáticos via `StaticFiles` | 2 |
+| `/` | GET | `index.html` (hero D1) | ✅ |
+| `/aprender` | GET | `aprender_indice.html` (lista de artigos) | ✅ |
+| `/aprender/{slug}` | GET | `artigo.html` (artigo com prev/next) | ✅ |
+| `/playground` | GET | `playground.html` (form + presets) | ✅ |
+| `/playground/gerar` | POST | `partials/resultado.html` (HTMX swap) | ✅ |
+| `/galeria` | GET | `galeria.html` (placeholder por ora) | ⏳ |
+| `/galeria/{slug}` | GET | detalhe da obra | ⏳ |
+| `/static/*` | GET | arquivos estáticos via `StaticFiles` | ✅ |
 
-### 5.2 Padrão HTMX no playground
+### 5.2 Design system (`app/static/css/style.css`)
+
+CSS puro (~550 linhas), sem build step. Tokens em custom properties na raiz:
+
+```css
+:root {
+    /* Superfícies */
+    --bg: #1A0B2E;      /* fundo principal */
+    --bg-deep: #110720; /* fundo mais profundo (hero, sections alternadas) */
+    --surface: #2B1A47; /* cards, painéis */
+    --surface-2: #3A2560;
+
+    /* Cores de acento */
+    --purple: #B388FF;  --purple-dim: #8B5FD6;
+    --orange: #FFA940;  --orange-dim: #D98724;
+
+    /* Texto */
+    --fg: #F5EFDC;      --fg-dim: #D6CFBA;   --muted: #A296BC;
+
+    /* Glow (box-shadows decorativos) */
+    --glow-orange: 0 8px 32px rgba(255,169,64,.28);
+    --glow-purple: 0 8px 32px rgba(179,136,255,.22);
+}
+```
+
+**Tipografia:** Syne 600–800 (display, h1–h3) · Inter 400–600 (corpo) · JetBrains Mono 400–600 (código, kicker).
+
+**Gradiente em headings:**
+```css
+h1, h2 { background: linear-gradient(120deg, var(--fg), var(--purple), var(--orange));
+         -webkit-background-clip: text; color: transparent; }
+```
+
+**Overlay de ruído:** `<body>` tem `::before` com SVG `feTurbulence` a 5% de opacidade
+(`mix-blend-mode: overlay`) — textura analógica sem imagem extra.
+
+**Reveal toggle (pure CSS):** checkbox `.reveal-toggle` + sibling selector `~` controla
+`opacity` de `.img-reveal` e troca o texto do label (`.lig`/`.des`) sem nenhum JavaScript.
+
+### 5.3 Conteúdo educativo (`app/content_loader.py`)
+
+```python
+@dataclass(frozen=True)
+class Artigo:
+    slug: str; titulo: str; ordem: int; resumo: str
+    html: str; fontes: tuple[str, ...] = ()
+```
+
+- Arquivos `.md` em `app/content/aprender/` com frontmatter YAML (`titulo`, `ordem`,
+  `resumo`, `fontes`).
+- Extensões python-markdown: `fenced_code`, `tables`, `toc`, `footnotes`, `smarty`,
+  `attr_list`, `sane_lists`.
+- Lista carregada uma vez no startup e injetada globalmente nos templates:
+  `templates.env.globals["artigos_global"] = ARTIGOS`.
+- `vizinhos(artigos, slug)` devolve `(anterior, proximo)` para navegação prev/next.
+
+### 5.4 Padrão HTMX no playground
 
 ```html
 <form hx-post="/playground/gerar"
@@ -250,7 +325,7 @@ base64 do PNG gerado em memória — evita persistir arquivos.
 Para uploads (Fase 4): mesma rota aceita `multipart/form-data` via
 `UploadFile` do FastAPI.
 
-### 5.3 Gerenciamento da galeria
+### 5.5 Gerenciamento da galeria
 
 Estrutura de `app/static/galeria.yaml`:
 
@@ -337,20 +412,33 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
 
 ## 8. Roadmap
 
+### Fases do produto
+
 | Fase | Entregável | Status |
 |---|---|---|
-| **1** | Gerador standalone + CLI + presets + testes | ✅ Concluída |
-| **2** | FastAPI app + playground com presets + deploy inicial | ⏳ Próxima |
-| **3** | Galeria via YAML + hero polido + reveal animado | ⏳ |
-| **4** | Upload de depth map + rate limiting | ⏳ |
-| **5** | "Como funciona" + SEO + analytics (opcional) | ⏳ |
+| **F1** | Gerador standalone + CLI + presets + testes | ✅ |
+| **F2** | FastAPI app + playground + hub educativo fundação | ✅ (falta deploy) |
+| **F3** | Galeria via YAML + obras curadas + páginas de detalhe | ⏳ |
+| **F4** | Upload de depth map no playground + rate limiting | ⏳ |
+| **F5** | SEO básico + analytics (opcional) | ⏳ |
+
+### Iterações de design (D-series)
+
+| Iteração | Escopo | Status |
+|---|---|---|
+| **D1** | Home — hero com estereograma, tutorial, 3 portas, design system dark-retro | ✅ |
+| **D2** | `/aprender` — trilha visual, indicador de progresso, teasers dos artigos | ⏳ próxima |
+| **D3** | Página de artigo — TOC sidebar fixo, drop cap, sidenotes, prev/next como cards | ⏳ |
+| **D4** | Galeria — masonry, filter chips (era/estilo/licença), hover reveal | ⏳ |
+| **D5** | Playground — 2 colunas, controles fixos à esquerda, auto-generate com debounce, compartilhamento por query string | ⏳ |
+| **D6** | Polish global — microanimações, glow pulse no CTA, easter egg, card rotations sutis | ⏳ |
 
 ### Critérios de saída por fase
 
-- **F1:** `pytest` passa + estereograma de teste gerado e o 3D é visível
-- **F2:** site online no `*.fly.dev`, playground gera < 2s sem reload
+- **F1:** `pytest` passa + estereograma gerado e o 3D é visível
+- **F2:** site online no `*.fly.dev`, playground gera < 2s sem reload ← **pendente: deploy**
 - **F3:** ≥ 5 obras na galeria, navegação fluida, reveal funciona
-- **F4:** upload de PNG cinza qualquer → estereograma; uploads inválidos retornam erro amigável
+- **F4:** upload de PNG cinza qualquer → estereograma; inválidos retornam erro amigável
 - **F5:** Lighthouse mobile ≥ 85 em performance e acessibilidade
 
 ---
