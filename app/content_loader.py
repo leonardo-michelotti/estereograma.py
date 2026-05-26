@@ -21,8 +21,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import markdown as md
 import yaml
+from markdown import Markdown
 
 # Palavras por minuto pra leitura técnica em português (média conservadora).
 WPM_LEITURA = 220
@@ -45,6 +45,7 @@ class Artigo:
     glifo: str = "◉"
     tempo_leitura: int = 1
     status: str = "pronto"  # "pronto" | "esboco"
+    toc_html: str = ""
     metadata: dict[str, Any] | None = None
 
     @property
@@ -65,9 +66,9 @@ def _parse_frontmatter(texto: str) -> tuple[dict[str, Any], str]:
     return meta, corpo
 
 
-def _render_md(corpo: str) -> str:
-    return md.markdown(
-        corpo,
+def _render_md(corpo: str) -> tuple[str, str]:
+    """Renderiza o markdown e devolve (html, toc_html)."""
+    instancia = Markdown(
         extensions=[
             "fenced_code",
             "tables",
@@ -78,9 +79,12 @@ def _render_md(corpo: str) -> str:
             "smarty",
         ],
         extension_configs={
-            "toc": {"permalink": False, "toc_depth": "2-4"},
+            "toc": {"permalink": False, "toc_depth": "2-3"},
+            "footnotes": {"BACKLINK_TEXT": "↩"},
         },
     )
+    html = instancia.convert(corpo)
+    return html, instancia.toc
 
 
 _TAG_RE = re.compile(r"<[^>]+>")
@@ -111,7 +115,7 @@ def carregar_artigos(base_dir: Path) -> list[Artigo]:
     for arquivo in sorted(base_dir.glob("*.md")):
         bruto = arquivo.read_text(encoding="utf-8")
         meta, corpo = _parse_frontmatter(bruto)
-        html = _render_md(corpo)
+        html, toc_html = _render_md(corpo)
         palavras = _contar_palavras(html)
         tempo = max(1, round(palavras / WPM_LEITURA))
         artigos.append(
@@ -125,6 +129,7 @@ def carregar_artigos(base_dir: Path) -> list[Artigo]:
                 glifo=str(meta.get("glifo", "◉")),
                 tempo_leitura=tempo,
                 status=_detectar_status(html, meta),
+                toc_html=toc_html,
                 metadata=meta,
             )
         )

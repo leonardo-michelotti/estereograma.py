@@ -2,37 +2,81 @@
 {% block titulo %}{{ artigo.titulo }} — estereograma.py{% endblock %}
 
 {% block conteudo %}
-<article class="artigo">
-    <header class="artigo-header">
-        <p class="trilha"><a href="/aprender">← aprender</a> / parte {{ "%02d" % artigo.ordem }}</p>
-        <h1>{{ artigo.titulo }}</h1>
-        {% if artigo.resumo %}<p class="lead">{{ artigo.resumo }}</p>{% endif %}
-    </header>
+<div class="leitura-progress" aria-hidden="true"></div>
 
-    <div class="artigo-corpo">
-        {{ artigo.html | safe }}
-    </div>
-
-    {% if artigo.fontes %}
-    <aside class="fontes">
-        <h2>Fontes</h2>
-        <ul>
-            {% for f in artigo.fontes %}<li>{{ f | safe }}</li>{% endfor %}
-        </ul>
+<div class="artigo-layout">
+    {% if artigo.toc_html %}
+    <aside class="artigo-toc" aria-label="Sumário deste capítulo">
+        <p class="toc-rotulo">neste capítulo</p>
+        {{ artigo.toc_html | safe }}
     </aside>
     {% endif %}
 
-    <nav class="artigo-nav">
-        <div class="prev">
+    <article class="artigo {% if artigo.esboco %}artigo-esboco{% endif %}">
+        <header class="artigo-header">
+            <p class="trilha">
+                <a href="/aprender">aprender</a>
+                <span class="trilha-sep">›</span>
+                <span class="trilha-num">parte {{ "%02d" % artigo.ordem }} de 6</span>
+            </p>
+
+            <div class="artigo-titulo-bloco">
+                <span class="artigo-glifo" aria-hidden="true">{{ artigo.glifo }}</span>
+                <h1>{{ artigo.titulo|lower }}</h1>
+            </div>
+
+            {% if artigo.resumo %}<p class="lead">{{ artigo.resumo }}</p>{% endif %}
+
+            <ul class="artigo-meta">
+                <li>≈ <strong>{{ artigo.tempo_leitura }} min</strong> de leitura</li>
+                {% if artigo.esboco %}
+                <li><span class="badge badge-esboco">em produção</span></li>
+                {% else %}
+                <li><span class="badge badge-pronto">pronto</span></li>
+                {% endif %}
+            </ul>
+        </header>
+
+        <div class="artigo-corpo">
+            {{ artigo.html | safe }}
+        </div>
+
+        {% if artigo.fontes %}
+        <aside class="fontes">
+            <h2>Fontes</h2>
+            <ul>
+                {% for f in artigo.fontes %}<li>{{ f | safe }}</li>{% endfor %}
+            </ul>
+        </aside>
+        {% endif %}
+
+        <nav class="artigo-nav" aria-label="Navegação entre capítulos">
             {% if anterior %}
-            <a href="/aprender/{{ anterior.slug }}">← {{ anterior.titulo }}</a>
-            {% endif %}
-        </div>
-        <div class="next">
+            <a href="/aprender/{{ anterior.slug }}" class="nav-card nav-prev">
+                <span class="nav-direcao">← anterior</span>
+                <span class="nav-conteudo">
+                    <span class="nav-glifo" aria-hidden="true">{{ anterior.glifo }}</span>
+                    <span class="nav-texto">
+                        <span class="nav-num">{{ "%02d" % anterior.ordem }}</span>
+                        <span class="nav-titulo">{{ anterior.titulo|lower }}</span>
+                    </span>
+                </span>
+            </a>
+            {% else %}<span></span>{% endif %}
+
             {% if proximo %}
-            <a href="/aprender/{{ proximo.slug }}">{{ proximo.titulo }} →</a>
+            <a href="/aprender/{{ proximo.slug }}" class="nav-card nav-next">
+                <span class="nav-direcao">próximo →</span>
+                <span class="nav-conteudo">
+                    <span class="nav-texto">
+                        <span class="nav-num">{{ "%02d" % proximo.ordem }}</span>
+                        <span class="nav-titulo">{{ proximo.titulo|lower }}</span>
+                    </span>
+                    <span class="nav-glifo" aria-hidden="true">{{ proximo.glifo }}</span>
+                </span>
+            </a>
             {% endif %}
-        </div>
-    </nav>
-</article>
+        </nav>
+    </article>
+</div>
 {% endblock %}
