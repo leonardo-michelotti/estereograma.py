@@ -3,55 +3,65 @@
 
 {% block conteudo %}
 <section class="playground">
+    <p class="kicker" style="font-family:var(--font-mono);color:var(--orange);font-size:.85rem;letter-spacing:.06em;margin:0 0 .75rem">o gerador</p>
     <h1>playground</h1>
-    <p class="lead">Escolha um preset, ajuste e gere.</p>
+    <p class="lead">Escolha um preset, ajuste os parâmetros e gere seu estereograma.</p>
 
-    <form hx-post="/playground/gerar"
-          hx-target="#resultado"
-          hx-swap="innerHTML"
-          hx-indicator="#carregando"
-          class="form-playground">
+    <div class="playground-layout">
+        <form hx-post="/playground/gerar"
+              hx-target="#resultado"
+              hx-swap="innerHTML"
+              hx-indicator="#carregando"
+              class="form-playground">
 
-        <div class="campo">
-            <label for="preset">forma</label>
-            <select name="preset" id="preset" required>
-                {% for p in presets %}
-                <option value="{{ p.slug }}">{{ p.titulo }}</option>
-                {% endfor %}
-            </select>
+            <div class="campo">
+                <label for="preset">forma</label>
+                <select name="preset" id="preset" required>
+                    {% for p in presets %}
+                    <option value="{{ p.slug }}">{{ p.titulo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="campo">
+                <label for="textura">textura</label>
+                <select name="textura" id="textura">
+                    <option value="pink_noise" selected>pink noise (organic)</option>
+                    <option value="random_dots">random dots (colorido)</option>
+                    <option value="random_dots_bw">random dots (p&amp;b)</option>
+                    <option value="colorido">paleta colorida</option>
+                </select>
+            </div>
+
+            <div class="campo">
+                <label for="mu">profundidade (μ): <output id="mu_v">0.333</output></label>
+                <input type="range" name="mu" id="mu" min="0.15" max="0.6" step="0.01" value="0.333"
+                       oninput="document.getElementById('mu_v').value = this.value">
+            </div>
+
+            <div class="campo">
+                <label for="eye_separation">distância dos olhos (px): <output id="eye_v">200</output></label>
+                <input type="range" name="eye_separation" id="eye_separation" min="120" max="280" step="10" value="200"
+                       oninput="document.getElementById('eye_v').value = this.value">
+            </div>
+
+            <div class="campo">
+                <label for="seed">seed (opcional)</label>
+                <input type="number" name="seed" id="seed" placeholder="aleatório">
+            </div>
+
+            <button type="submit" class="botao primario">gerar estereograma</button>
+            <span id="carregando" class="indicador">gerando…</span>
+        </form>
+
+        <div class="playground-output">
+            <div id="resultado">
+                <div class="playground-placeholder">
+                    <span class="playground-placeholder-glifo">◉</span>
+                    <p>configure os parâmetros ao lado e clique em <strong>gerar</strong> para criar seu estereograma.</p>
+                </div>
+            </div>
         </div>
-
-        <div class="campo">
-            <label for="textura">textura</label>
-            <select name="textura" id="textura">
-                <option value="pink_noise" selected>pink noise (organic)</option>
-                <option value="random_dots">random dots (colorido)</option>
-                <option value="random_dots_bw">random dots (preto e branco)</option>
-                <option value="colorido">paleta colorida</option>
-            </select>
-        </div>
-
-        <div class="campo">
-            <label for="mu">profundidade (μ): <output id="mu_v">0.333</output></label>
-            <input type="range" name="mu" id="mu" min="0.15" max="0.6" step="0.01" value="0.333"
-                   oninput="document.getElementById('mu_v').value = this.value">
-        </div>
-
-        <div class="campo">
-            <label for="eye_separation">distância dos olhos (px): <output id="eye_v">200</output></label>
-            <input type="range" name="eye_separation" id="eye_separation" min="120" max="280" step="10" value="200"
-                   oninput="document.getElementById('eye_v').value = this.value">
-        </div>
-
-        <div class="campo">
-            <label for="seed">seed (opcional)</label>
-            <input type="number" name="seed" id="seed" placeholder="aleatório">
-        </div>
-
-        <button type="submit" class="botao primario">gerar</button>
-        <span id="carregando" class="indicador">gerando...</span>
-    </form>
-
-    <div id="resultado" class="resultado"></div>
+    </div>
 </section>
 {% endblock %}
