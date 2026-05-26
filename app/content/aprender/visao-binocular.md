@@ -1,6 +1,7 @@
 ---
 titulo: Como o olho vê em 3D
 ordem: 3
+glifo: ◐
 resumo: Disparidade binocular, fusão, e por que dois olhos veem profundidade que um só não vê.
 fontes:
   - 'Howard, I. P. & Rogers, B. J. (2012). <em>Perceiving in Depth</em>, Oxford University Press.'

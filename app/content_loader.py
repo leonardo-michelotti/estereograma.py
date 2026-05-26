@@ -16,12 +16,22 @@ desenvolvimento, basta reiniciar o servidor (uvicorn --reload faz isso).
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import markdown as md
 import yaml
+
+# Palavras por minuto pra leitura técnica em português (média conservadora).
+WPM_LEITURA = 220
+
+# Marcadores que indicam que o artigo é um esboço/skeleton.
+_PADROES_ESBOCO = (
+    re.compile(r"<blockquote>.*?\bskeleton\b", re.IGNORECASE | re.DOTALL),
+    re.compile(r"<blockquote>.*?\ba\s+redigir\b", re.IGNORECASE | re.DOTALL),
+)
 
 
 @dataclass(frozen=True)
@@ -32,7 +42,14 @@ class Artigo:
     resumo: str
     html: str
     fontes: tuple[str, ...] = ()
+    glifo: str = "◉"
+    tempo_leitura: int = 1
+    status: str = "pronto"  # "pronto" | "esboco"
     metadata: dict[str, Any] | None = None
+
+    @property
+    def esboco(self) -> bool:
+        return self.status == "esboco"
 
 
 def _parse_frontmatter(texto: str) -> tuple[dict[str, Any], str]:
@@ -66,20 +83,48 @@ def _render_md(corpo: str) -> str:
     )
 
 
+_TAG_RE = re.compile(r"<[^>]+>")
+_WS_RE = re.compile(r"\s+")
+
+
+def _contar_palavras(html: str) -> int:
+    """Conta palavras no texto extraído do HTML."""
+    texto = _TAG_RE.sub(" ", html)
+    texto = _WS_RE.sub(" ", texto).strip()
+    return len(texto.split()) if texto else 0
+
+
+def _detectar_status(html: str, meta: dict[str, Any]) -> str:
+    """Frontmatter `status:` ganha de detecção automática."""
+    declarado = meta.get("status")
+    if declarado:
+        return str(declarado)
+    for padrao in _PADROES_ESBOCO:
+        if padrao.search(html):
+            return "esboco"
+    return "pronto"
+
+
 def carregar_artigos(base_dir: Path) -> list[Artigo]:
     """Carrega todos os .md de base_dir, ordenados pelo campo `ordem`."""
     artigos: list[Artigo] = []
     for arquivo in sorted(base_dir.glob("*.md")):
         bruto = arquivo.read_text(encoding="utf-8")
         meta, corpo = _parse_frontmatter(bruto)
+        html = _render_md(corpo)
+        palavras = _contar_palavras(html)
+        tempo = max(1, round(palavras / WPM_LEITURA))
         artigos.append(
             Artigo(
                 slug=arquivo.stem,
                 titulo=str(meta.get("titulo", arquivo.stem)),
                 ordem=int(meta.get("ordem", 999)),
                 resumo=str(meta.get("resumo", "")),
-                html=_render_md(corpo),
+                html=html,
                 fontes=tuple(meta.get("fontes", []) or []),
+                glifo=str(meta.get("glifo", "◉")),
+                tempo_leitura=tempo,
+                status=_detectar_status(html, meta),
                 metadata=meta,
             )
         )

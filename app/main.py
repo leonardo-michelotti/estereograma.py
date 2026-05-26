@@ -36,10 +36,18 @@ async def index(request: Request) -> HTMLResponse:
 
 @app.get("/aprender", response_class=HTMLResponse)
 async def aprender_indice(request: Request) -> HTMLResponse:
+    tempo_total = sum(a.tempo_leitura for a in ARTIGOS)
+    prontos = sum(1 for a in ARTIGOS if not a.esboco)
+    esbocos = sum(1 for a in ARTIGOS if a.esboco)
     return templates.TemplateResponse(
         request,
         "aprender_indice.html",
-        {"artigos": ARTIGOS},
+        {
+            "artigos": ARTIGOS,
+            "tempo_total": tempo_total,
+            "prontos": prontos,
+            "esbocos": esbocos,
+        },
     )
 
 

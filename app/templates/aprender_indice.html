@@ -2,26 +2,64 @@
 {% block titulo %}aprender — estereograma.py{% endblock %}
 
 {% block conteudo %}
-<section class="aprender-indice">
-    <h1>aprender</h1>
+<section class="aprender-hero">
+    <p class="kicker">o guia</p>
+    <h1>aprender estereogramas <em>do zero</em>.</h1>
     <p class="lead">
-        Um guia em seis partes — do "o que diabos é isso" até a fórmula
-        matemática que o algoritmo executa pixel a pixel. Pode ler em ordem
-        ou pular pro tópico que te interessa.
+        Seis partes, de <em>"o que diabos é isso"</em> à fórmula matemática
+        que esse site executa pixel a pixel. Pode ler em ordem ou pular pro
+        capítulo que te interessa.
     </p>
 
-    <ol class="lista-artigos">
-        {% for a in artigos %}
-        <li>
-            <a href="/aprender/{{ a.slug }}">
-                <span class="numero">{{ "%02d" % a.ordem }}</span>
-                <span class="conteudo">
-                    <strong>{{ a.titulo }}</strong>
-                    {% if a.resumo %}<small>{{ a.resumo }}</small>{% endif %}
-                </span>
-            </a>
-        </li>
-        {% endfor %}
-    </ol>
+    <ul class="aprender-meta">
+        <li><strong>{{ artigos|length }}</strong> capítulos</li>
+        <li><strong>~{{ tempo_total }} min</strong> de leitura</li>
+        <li><strong>{{ prontos }}</strong> pronto{{ "s" if prontos != 1 }}{% if esbocos %} · <span class="meta-dim">{{ esbocos }} em produção</span>{% endif %}</li>
+    </ul>
+</section>
+
+<ol class="trilha-aprender" role="list">
+    {% for a in artigos %}
+    <li class="estacao {% if a.esboco %}estacao-esboco{% endif %}" style="--i: {{ loop.index0 }}">
+        <a href="/aprender/{{ a.slug }}" class="estacao-link">
+            <div class="estacao-marca">
+                <span class="estacao-num">{{ "%02d" % a.ordem }}</span>
+                <span class="estacao-glifo" aria-hidden="true">{{ a.glifo }}</span>
+            </div>
+
+            <div class="estacao-corpo">
+                <div class="estacao-cabecalho">
+                    <h2>{{ a.titulo|lower }}</h2>
+                    {% if a.esboco %}
+                    <span class="badge badge-esboco">em produção</span>
+                    {% else %}
+                    <span class="badge badge-pronto">pronto</span>
+                    {% endif %}
+                </div>
+
+                {% if a.resumo %}
+                <p class="estacao-resumo">{{ a.resumo }}</p>
+                {% endif %}
+
+                <div class="estacao-rodape">
+                    <span class="estacao-tempo">≈ {{ a.tempo_leitura }} min</span>
+                    <span class="estacao-cta">
+                        {% if a.esboco %}espiar esboço{% else %}ler capítulo{% endif %}
+                        <span aria-hidden="true">→</span>
+                    </span>
+                </div>
+            </div>
+        </a>
+    </li>
+    {% endfor %}
+</ol>
+
+<section class="aprender-final">
+    <h2>chegou no fim?</h2>
+    <p>
+        O <a href="/playground">playground</a> é onde o algoritmo do
+        capítulo 06 vira imagem — escolhe um preset, ajusta os parâmetros
+        do capítulo 05 e vê o resultado em segundos.
+    </p>
 </section>
 {% endblock %}

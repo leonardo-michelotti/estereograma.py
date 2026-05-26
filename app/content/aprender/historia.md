@@ -1,6 +1,7 @@
 ---
 titulo: História
 ordem: 2
+glifo: ◴
 resumo: Wheatstone 1838 → Julesz nos Bell Labs → Tyler 1979 → Magic Eye 1991. Um século e meio em quatro nomes.
 fontes:
   - 'Wheatstone, C. (1838). Contributions to the Physiology of Vision. <em>Philosophical Transactions of the Royal Society</em>.'

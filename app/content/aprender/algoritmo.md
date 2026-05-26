@@ -1,6 +1,7 @@
 ---
 titulo: Do cálculo ao algoritmo
 ordem: 6
+glifo: ⌬
 resumo: Look-back ingênuo vs. classes de equivalência (Thimbleby 1994) — incluindo o código real do gerador deste site.
 fontes:
   - 'Thimbleby, H. W., Inglis, S., & Witten, I. H. (1994). Displaying 3D Images: Algorithms for SIRDS. <em>IEEE Computer</em>, 27(10), 38–48.'

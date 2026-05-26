@@ -1,6 +1,7 @@
 ---
 titulo: O que são estereogramas
 ordem: 1
+glifo: ◉
 resumo: Imagens 2D que escondem cenas tridimensionais, visíveis a olho nu quando você descansa o foco — e por que isso funciona.
 fontes:
   - 'Julesz, B. (1971). <em>Foundations of Cyclopean Perception</em>. University of Chicago Press.'

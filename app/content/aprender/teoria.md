@@ -1,6 +1,7 @@
 ---
 titulo: A teoria por trás da imagem
 ordem: 4
+glifo: △
 resumo: Paralaxe horizontal, plano de convergência e o truque de codificar profundidade em deslocamento.
 fontes:
   - 'Tyler, C. W. (1983). Sensory processing of binocular disparity. In <em>Vergence Eye Movements</em>.'

@@ -1,6 +1,7 @@
 ---
 titulo: O cálculo
 ordem: 5
+glifo: ∑
 resumo: A fórmula de separação estereoscópica — geometria simples que vira a alma do algoritmo.
 fontes:
   - 'Thimbleby, H. W., Inglis, S., & Witten, I. H. (1994). Displaying 3D Images: Algorithms for SIRDS. <em>IEEE Computer</em>, 27(10), 38–48.'
