@@ -1,0 +1,110 @@
+{
+  "01-controle-legacy": {
+    "engine": "legacy",
+    "engine_version": "legacy",
+    "rgb_sha256": "d1cc5ab7fcccf2880842094d15e077a8b5961f7837c7cbf442775e59db392b6a",
+    "file": "01-controle-legacy.png",
+    "config": {
+      "width": 900,
+      "height": 560,
+      "eye_separation": 216,
+      "depth": 0.26,
+      "oversample": 3,
+      "mosaic_cell": 2,
+      "depth_blur": 0.65,
+      "occlusion": "visibility",
+      "texture": "mosaic",
+      "seed": 24
+    }
+  },
+  "02-v2-conflitos": {
+    "engine": "v2",
+    "engine_version": "v2.0",
+    "rgb_sha256": "e2e1bfa7cad1f1639e97a892e8f6fd1a047d0d77a2e118ec6249cccd12fa72e0",
+    "file": "02-v2-conflitos.png",
+    "config": {
+      "width": 900,
+      "height": 560,
+      "eye_separation": 216,
+      "depth": 0.26,
+      "oversample": 3,
+      "mosaic_cell": 4,
+      "depth_blur": 0.65,
+      "occlusion": "conflicts",
+      "texture": "mosaic",
+      "seed": 24
+    }
+  },
+  "03-v2-visibilidade": {
+    "engine": "v2",
+    "engine_version": "v2.0",
+    "rgb_sha256": "2f25ec3e6558bf367c0c3b5d71a8698ebdec7018b9f9586becfe967088ea0320",
+    "file": "03-v2-visibilidade.png",
+    "config": {
+      "width": 900,
+      "height": 560,
+      "eye_separation": 216,
+      "depth": 0.26,
+      "oversample": 3,
+      "mosaic_cell": 4,
+      "depth_blur": 0.65,
+      "occlusion": "visibility",
+      "texture": "mosaic",
+      "seed": 24
+    }
+  },
+  "04-v2-mosaico-fino": {
+    "engine": "v2",
+    "engine_version": "v2.0",
+    "rgb_sha256": "dddafe79c12fbc8d8ccdda909f2beba3339cf1992d234fcd940108ef07d9afbe",
+    "file": "04-v2-mosaico-fino.png",
+    "config": {
+      "width": 900,
+      "height": 560,
+      "eye_separation": 216,
+      "depth": 0.26,
+      "oversample": 3,
+      "mosaic_cell": 2,
+      "depth_blur": 0.65,
+      "occlusion": "visibility",
+      "texture": "mosaic",
+      "seed": 24
+    }
+  },
+  "05-v2-texto-3d": {
+    "engine": "v2",
+    "engine_version": "v2.0",
+    "rgb_sha256": "b47494dbaebfb76b0ab1061079b145097117a61835151ab7c6c2a8bf957b4f0f",
+    "file": "05-v2-texto-3d.png",
+    "config": {
+      "width": 900,
+      "height": 560,
+      "eye_separation": 216,
+      "depth": 0.26,
+      "oversample": 3,
+      "mosaic_cell": 2,
+      "depth_blur": 0.65,
+      "occlusion": "visibility",
+      "texture": "mosaic",
+      "seed": 24
+    }
+  },
+  "06-v2-esfera": {
+    "engine": "v2",
+    "engine_version": "v2.0",
+    "rgb_sha256": "98df2c4e556252953b281e400bee47eeb6343005ed7ce54d940e9dabda942e26",
+    "file": "06-v2-esfera.png",
+    "config": {
+      "width": 900,
+      "height": 560,
+      "eye_separation": 216,
+      "depth": 0.26,
+      "oversample": 3,
+      "mosaic_cell": 2,
+      "depth_blur": 0.65,
+      "occlusion": "visibility",
+      "texture": "mosaic",
+      "seed": 24
+    }
+  }
+}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block titulo %}Como ver — estereograma.py{% endblock %}
+{% block descricao %}Aprenda a enxergar autostereogramas com um treino guiado de visão paralela.{% endblock %}
+{% block body_class %}learn-page{% endblock %}
+{% block main_class %}learn-main{% endblock %}
+
+{% block conteudo %}
+<section class="v03-learn" aria-labelledby="learn-title">
+    <header class="v03-learn-heading">
+        <div>
+            <p class="v03-eyebrow">Como enxergar · visão paralela</p>
+            <h1 id="learn-title">Treine o olhar, um passo de cada vez.</h1>
+        </div>
+        <p>Não precisa forçar os olhos. O objetivo é relaxar o foco e olhar além da tela.</p>
+    </header>
+
+    <div class="v03-tutorial-shell">
+        <div class="v03-tutorial-copy">
+            <ol class="v03-step-tabs" aria-label="Etapas do treinamento">
+                <li><button type="button" data-step="0" aria-current="step"><span>1</span>Aproxime</button></li>
+                <li><button type="button" data-step="1"><span>2</span>Funda</button></li>
+                <li><button type="button" data-step="2"><span>3</span>Afaste</button></li>
+            </ol>
+
+            <div class="v03-eye-guide" role="img" aria-label="Dois olhos olhando em paralelo para um ponto além da tela">
+                <div class="v03-eye" aria-hidden="true"><i></i></div>
+                <div class="v03-eye-path" aria-hidden="true">
+                    <i></i><span></span><i></i>
+                    <b id="eye-guide-label">relaxe o foco</b>
+                </div>
+                <div class="v03-eye" aria-hidden="true"><i></i></div>
+            </div>
+
+            <div class="v03-instruction" id="tutorial-instruction" aria-live="polite">
+                <p class="v03-mono-label" id="step-kicker">PASSO 1 DE 3</p>
+                <h2 id="step-title">Aproxime o rosto da imagem</h2>
+                <p id="step-description">Chegue perto até o padrão perder a nitidez. Não tente identificar a figura ainda.</p>
+            </div>
+
+            <div class="v03-tutorial-actions">
+                <button class="v03-button" type="button" id="previous-step" hidden>Voltar</button>
+                <button class="v03-button v03-button--primary" type="button" id="next-step">Próximo passo</button>
+                <button class="v03-button v03-button--text" type="button" id="need-help" aria-expanded="false" aria-controls="help-panel">Não consigo ver</button>
+            </div>
+
+            <aside class="v03-help-panel" id="help-panel" hidden>
+                <strong>Experimente isto</strong>
+                <p>Reduza o brilho, aumente a distância da tela e olhe através da imagem. Pisque normalmente e evite prender a respiração.</p>
+                <p>Algumas pessoas não conseguem fazer a fusão binocular — você ainda pode criar e usar o reveal.</p>
+            </aside>
+
+            <div class="v03-tutorial-complete" id="tutorial-complete" hidden>
+                <span>TREINO CONCLUÍDO</span>
+                <h2>Agora leve o olhar para o Estúdio.</h2>
+                <p>Comece com Esfera, textura Mosaico e profundidade Confortável.</p>
+                <a class="v03-button v03-button--primary" href="/studio">Criar meu primeiro</a>
+            </div>
+        </div>
+
+        <div class="v03-tutorial-visual">
+            <div class="v03-alignment v03-alignment--training"><i></i><i></i></div>
+            <input class="v03-reveal-toggle" type="checkbox" id="reveal-training">
+            <div class="v03-image-frame v03-training-frame">
+                <img src="{{ url_for('static', path='/img/v03/hero-estereograma.png') }}?v=4" alt="Autostereograma de treino com um coração em duas camadas escondido">
+                <img class="v03-depth" src="{{ url_for('static', path='/img/v03/hero-depth.png') }}?v=4" alt="Mapa de profundidade que revela o coração do exercício">
+                <span class="v03-registration v03-registration--bottom">TREINO · CORAÇÃO</span>
+            </div>
+            <div class="v03-training-caption">
+                <span id="focus-distance">5 cm da tela</span>
+                <label for="reveal-training"><span class="is-hidden">Revelar resposta</span><span class="is-visible">Voltar ao treino</span></label>
+            </div>
+        </div>
+    </div>
+
+    <footer class="v03-learn-note">
+        <span>visão paralela</span>
+        <p>Os olhos permanecem quase paralelos, como se o foco estivesse atrás da tela. Cruzá-los pode inverter a profundidade.</p>
+        <a href="/como-funciona">Entender como a profundidade é construída →</a>
+    </footer>
+</section>
+<script src="{{ url_for('static', path='/js/como-ver.js') }}" defer></script>
+{% endblock %}

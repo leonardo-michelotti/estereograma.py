@@ -1,10 +1,13 @@
-"""Gerador de autostereogramas usando o algoritmo de classes de equivalência.
+"""Gerador legacy de autostereogramas usado atualmente pelo site e pela CLI.
 
 Referência: Thimbleby, Inglis & Witten (1994), "Displaying 3D Images:
 Algorithms for Single Image Random Dot Stereograms", IEEE Computer 27(10).
 
-O algoritmo evita o "pattern ringing" do método ingênuo de look-back. Para
-cada linha:
+Esta implementação aplica a separação simétrica e classes de equivalência, mas
+não inclui a remoção completa de superfícies ocultas do artigo. Ela é preservada
+sem mudanças de comportamento enquanto o motor V2 é validado e integrado.
+
+Para cada linha:
 
 1. Mantém-se um vetor `same[x]` (cada pixel começa em sua própria classe).
 2. Varre-se a linha; em cada x calcula-se a separação estereoscópica
@@ -28,17 +31,21 @@ from typing import Literal
 import numpy as np
 from PIL import Image
 
-TexturaTipo = Literal["pink_noise", "random_dots", "random_dots_bw", "colorido", "custom"]
+TexturaTipo = Literal[
+    "pink_noise",
+    "random_dots",
+    "random_dots_bw",
+    "colorido",
+    "laboratorio",
+    "custom",
+]
 
 
 # -- texturas base --------------------------------------------------------- #
 
 
 def _pink_noise_rgb(altura: int, largura: int, seed: int | None) -> np.ndarray:
-    """Ruído 1/f bidimensional (3 canais). Academicamente o melhor para SIRDS:
-    estruturas de baixa e alta frequência ajudam o cérebro a fundir e a ler
-    profundidade sem se cansar tão rápido quanto com ruído branco puro.
-    """
+    """Ruído 1/f bidimensional em três canais, oferecido como textura orgânica."""
     rng = np.random.default_rng(seed)
     canais = []
     fx = np.fft.fftfreq(largura)[None, :]
@@ -55,6 +62,35 @@ def _pink_noise_rgb(altura: int, largura: int, seed: int | None) -> np.ndarray:
     # Aumenta o contraste pra ficar nítido sem virar ruído branco
     arr = np.clip((arr - 0.5) * 1.6 + 0.5, 0, 1)
     return (arr * 255).astype(np.uint8)
+
+
+def _laboratorio_rgb(altura: int, largura: int, seed: int | None) -> np.ndarray:
+    """Mosaico de alto contraste alinhado à identidade visual do projeto.
+
+    Células de 4 px preservam detalhes suficientes para a fusão binocular,
+    mas evitam o aspecto de estática RGB do ruído branco por pixel.
+    """
+    rng = np.random.default_rng(seed)
+    palette = np.array(
+        [
+            [233, 214, 85],
+            [32, 34, 28],
+            [49, 92, 255],
+            [255, 90, 69],
+            [247, 242, 232],
+        ],
+        dtype=np.uint8,
+    )
+    cell = 4
+    grid_height = (altura + cell - 1) // cell
+    grid_width = (largura + cell - 1) // cell
+    indices = rng.choice(
+        len(palette),
+        size=(grid_height, grid_width),
+        p=[0.48, 0.19, 0.14, 0.12, 0.07],
+    )
+    mosaic = palette[indices]
+    return np.repeat(np.repeat(mosaic, cell, axis=0), cell, axis=1)[:altura, :largura]
 
 
 def _gerar_textura(
@@ -91,6 +127,9 @@ def _gerar_textura(
         idx = rng.integers(0, len(palette), size=(altura, largura))
         return palette[idx]
 
+    if tipo == "laboratorio":
+        return _laboratorio_rgb(altura, largura, seed)
+
     if tipo == "custom":
         if textura_custom is None:
             raise ValueError("textura='custom' exige textura_custom (PIL.Image).")
@@ -123,8 +162,8 @@ def gerar_estereograma(
             difícil em monitores pequenos).
         mu: fator de depth-of-field, 0..1. Tipicamente 1/3. Maior = mais
             profundidade percebida, mas pode dificultar a fusão.
-        textura: pink_noise (default, melhor qualidade), random_dots,
-            random_dots_bw, colorido, ou custom.
+        textura: pink_noise (default), laboratorio (mosaico mais legível),
+            random_dots, random_dots_bw, colorido, ou custom.
         textura_custom: PIL.Image quando textura='custom'.
         seed: torna a geração determinística.
     """
@@ -147,7 +186,7 @@ def gerar_estereograma(
 
         for x in range(largura):
             z = z_row[x]
-            sep = int(round((1.0 - mu * z) * E / (2.0 - mu * z)))
+            sep = round((1.0 - mu * z) * E / (2.0 - mu * z))
             left = x - sep // 2
             right = left + sep
             if 0 <= left and right < largura:

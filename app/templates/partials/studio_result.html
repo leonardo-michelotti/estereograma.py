@@ -1,0 +1,31 @@
+<div class="v03-studio-render"
+     data-subject-type="{{ result.params.subject_type.value }}"
+     data-subject="{{ result.params.subject }}"
+     data-texture="{{ result.params.texture.value }}"
+     data-depth="{{ result.params.depth.value }}"
+     data-seed="{{ result.params.seed }}"
+     data-eye-separation="{{ result.params.eye_separation }}"
+     data-engine="{{ result.engine_version }}"
+     data-guide-separation="{{ result.guide_separation }}">
+    <input class="v03-reveal-toggle" type="checkbox" id="reveal-{{ result.render_id }}">
+    <div class="v03-image-frame v03-studio-render-frame">
+        <img src="/renders/{{ result.render_id }}.png" alt="Estereograma gerado no Estúdio">
+        <img class="v03-depth" src="/renders/{{ result.depth_id }}.png" alt="Mapa de profundidade da figura escondida">
+        <span class="v03-result-guides"
+              style="--guide-separation: {{ (result.guide_separation / result.params.width * 100)|round(3) }}%;"
+              aria-label="Pontos-guia separados por {{ result.guide_separation }} pixels">
+            <i></i><i></i>
+        </span>
+        <span class="v03-registration v03-registration--top">+ {{ '%.2f'|format(result.params.engine_mu) }}</span>
+        <span class="v03-registration v03-registration--bottom">GUIDE {{ result.guide_separation }} · {{ result.engine_version|upper }}</span>
+    </div>
+    <div class="v03-result-bar">
+        <div><strong>Resultado pronto</strong><span>{{ result.duration_ms }} ms{% if result.cache_hit %} · cache{% endif %}</span></div>
+        <div class="v03-result-actions">
+            <label class="v03-button v03-button--small" for="reveal-{{ result.render_id }}"><span class="is-hidden">Revelar mapa</span><span class="is-visible">Ver resultado</span></label>
+            <button class="v03-button v03-button--small" type="button" data-vary>Nova variação</button>
+            <a class="v03-button v03-button--small" href="/renders/{{ result.render_id }}.png" download="estereograma.png">Baixar PNG</a>
+            <button class="v03-button v03-button--small" type="button" data-copy-link>Copiar link</button>
+        </div>
+    </div>
+</div>

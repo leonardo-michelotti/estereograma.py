@@ -1,0 +1,40 @@
+name: Deploy Railway · Staging
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Staging · Railway
+    if: vars.RAILWAY_STAGING_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_STAGING_TOKEN }}
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+
+      - name: Publicar no Railway
+        run: >-
+          npx --yes @railway/cli@5.27.2 up --ci
+          --environment staging
+          --service estereograma-py
+
+      - name: Verificar o endereço de staging
+        if: vars.RAILWAY_STAGING_URL != ''
+        run: curl --fail --retry 5 --retry-delay 5 "${{ vars.RAILWAY_STAGING_URL }}/healthz"

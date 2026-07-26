@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block titulo %}Estúdio — estereograma.py{% endblock %}
+{% block descricao %}Crie um autostereograma escolhendo a figura, a textura e a profundidade.{% endblock %}
+{% block body_class %}studio-page{% endblock %}
+{% block main_class %}studio-main{% endblock %}
+
+{% block conteudo %}
+<section class="v03-studio" aria-labelledby="studio-title">
+    <header class="v03-studio-heading">
+        <div><p class="v03-eyebrow">Estúdio</p><h1 id="studio-title">O que você quer esconder?</h1></div>
+        <p id="studio-status" aria-live="polite">{% if restored %}Parâmetros restaurados. Gere para reconstruir o resultado.{% else %}Escolha o conteúdo e gere a primeira versão.{% endif %}</p>
+    </header>
+
+    <div class="v03-studio-shell">
+        <form class="v03-control-panel"
+              id="studio-form"
+              hx-post="/studio/preview"
+              hx-target="#studio-result"
+              hx-swap="innerHTML"
+              hx-indicator="#generation-overlay">
+
+            <fieldset>
+                <legend><span>01</span> Conteúdo</legend>
+                <div class="v03-segmented">
+                    <input type="radio" name="subject_type" id="subject-preset" value="preset" {% if initial.subject_type.value == 'preset' %}checked{% endif %}>
+                    <label for="subject-preset">Forma</label>
+                    <input type="radio" name="subject_type" id="subject-text" value="text" {% if initial.subject_type.value == 'text' %}checked{% endif %}>
+                    <label for="subject-text">Texto</label>
+                </div>
+
+                <div class="v03-subject-panel" data-subject-panel="preset">
+                    <div class="v03-shape-grid" role="group" aria-label="Escolha uma forma">
+                        {% for preset in presets %}
+                        <input type="radio" name="subject" id="shape-{{ preset.slug }}" value="{{ preset.slug }}" {% if initial.subject_type.value == 'preset' and initial.subject == preset.slug %}checked{% elif initial.subject_type.value == 'text' and preset.slug == 'esfera' %}checked{% endif %}>
+                        <label for="shape-{{ preset.slug }}">
+                            <i class="v03-shape v03-shape--{{ preset.slug }}" aria-hidden="true"></i>
+                            <span>{{ preset.titulo }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="v03-subject-panel" data-subject-panel="text" hidden>
+                    <label class="v03-field-label" for="text_subject">Texto escondido <span>até 12 caracteres</span></label>
+                    <input class="v03-text-input" id="text_subject" name="text_subject" type="text" maxlength="12" value="{% if initial.subject_type.value == 'text' %}{{ initial.subject }}{% else %}OLÁ{% endif %}" autocomplete="off">
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend><span>02</span> Textura</legend>
+                <div class="v03-texture-grid" role="group" aria-label="Escolha uma textura">
+                    {% for value, label in [('organic', 'Orgânica'), ('color', 'Colorida'), ('mono', 'Mono'), ('mosaic', 'Mosaico')] %}
+                    <input type="radio" name="texture" id="texture-{{ value }}" value="{{ value }}" {% if initial.texture.value == value %}checked{% endif %}>
+                    <label class="v03-texture v03-texture--{{ value }}" for="texture-{{ value }}"><i></i><span>{{ label }}</span></label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend><span>03</span> Profundidade</legend>
+                <div class="v03-depth-presets" role="group" aria-label="Intensidade da profundidade">
+                    {% for value, label in [('comfortable', 'Confortável'), ('marked', 'Marcada'), ('intense', 'Intensa')] %}
+                    <input type="radio" name="depth" id="depth-{{ value }}" value="{{ value }}" {% if initial.depth.value == value %}checked{% endif %}>
+                    <label for="depth-{{ value }}">{{ label }}</label>
+                    {% endfor %}
+                </div>
+                <div class="v03-depth-scale"><span>suave</span><i></i><span>forte</span></div>
+            </fieldset>
+
+            <details class="v03-advanced">
+                <summary>Controles avançados</summary>
+                <label class="v03-field-label" for="eye_separation">Conforto visual <output id="eye-value">{{ initial.eye_separation }}</output></label>
+                <input type="range" name="eye_separation" id="eye_separation" min="120" max="280" step="10" value="{{ initial.eye_separation }}">
+                <label class="v03-field-label" for="seed">Variação <span>seed</span></label>
+                <input class="v03-text-input" type="number" name="seed" id="seed" min="0" max="4294967295" value="{{ initial.seed if initial.seed is not none else '' }}" placeholder="aleatória">
+            </details>
+
+            <button class="v03-button v03-button--primary v03-generate" type="submit">
+                <span>Gerar estereograma</span><i aria-hidden="true"></i>
+            </button>
+        </form>
+
+        <section class="v03-canvas-panel" aria-label="Prévia e resultado">
+            <div class="v03-canvas-toolbar">
+                <div class="v03-alignment"><i></i><i></i></div>
+                <span id="canvas-label">prévia · esfera · orgânica</span>
+                <a class="v03-button v03-button--small" href="/como-ver">Como enxergar</a>
+            </div>
+
+            <div class="v03-canvas-stage">
+                <div id="studio-result" aria-live="polite">
+                    <div class="v03-studio-empty">
+                        <img src="{{ url_for('static', path='/img/v03/hero-estereograma.png') }}?v=4" alt="Prévia de um autostereograma com coração">
+                        <div><span>PRÉVIA</span><p>Seu primeiro resultado aparece aqui.</p></div>
+                    </div>
+                </div>
+
+                <div class="v03-generation-overlay" id="generation-overlay" aria-hidden="true">
+                    <span>GERANDO</span><p>Calculando equivalências de pixels…</p>
+                </div>
+                <div id="studio-error-slot" class="v03-error-slot" hidden></div>
+            </div>
+        </section>
+    </div>
+</section>
+<script src="{{ url_for('static', path='/js/studio.js') }}" defer></script>
+{% endblock %}

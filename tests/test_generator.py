@@ -1,9 +1,11 @@
+from hashlib import sha256
+
 import numpy as np
 import pytest
 from PIL import Image
 
 from app.stereogram.generator import gerar_estereograma
-from app.stereogram.patterns import esfera
+from app.stereogram.patterns import esfera, texto
 
 
 def test_dimensoes_saida():
@@ -65,3 +67,17 @@ def test_pink_noise_e_default():
     # Garante que o default pink_noise funciona sem erro
     saida = gerar_estereograma(depth, largura=100, altura=100, seed=42)
     assert saida.size == (100, 100)
+
+
+def test_textura_laboratorio_e_deterministica():
+    depth = esfera(160, 120)
+    a = gerar_estereograma(depth, 160, 120, textura="laboratorio", seed=24)
+    b = gerar_estereograma(depth, 160, 120, textura="laboratorio", seed=24)
+    assert np.array_equal(np.array(a), np.array(b))
+    assert len(np.unique(np.array(a).reshape(-1, 3), axis=0)) >= 4
+
+
+def test_mapa_de_texto_independe_de_fontes_do_sistema():
+    depth = texto("3D", 900, 560, profundidade_fundo=20)
+    digest = sha256(np.asarray(depth, dtype=np.uint8).tobytes()).hexdigest()
+    assert digest == "3a2c7024e3158bcd21722b404e018f690101dc3bef96b98058b0daa80710dffd"

@@ -4,55 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block titulo %}estereograma.py{% endblock %}</title>
-    <meta name="description" content="Hub educativo, galeria curada e gerador interativo de estereogramas (autostereograms / Magic Eye) em Python.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    <meta name="description" content="{% block descricao %}Crie autostereogramas no navegador e aprenda a enxergar o que está escondido.{% endblock %}">
+    <meta name="theme-color" content="#F2EFE6">
+    <link rel="canonical" href="{{ canonical_url(request) }}">
+    <meta property="og:site_name" content="estereograma.py">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="estereograma.py — laboratório óptico interativo">
+    <meta property="og:description" content="Crie autostereogramas no navegador e aprenda a enxergar o que está escondido.">
+    <meta property="og:url" content="{{ canonical_url(request) }}">
+    <meta property="og:image" content="{{ absolute_url(request, '/static/img/v03/og-estereograma.png') }}">
+    <meta property="og:image:width" content="1728">
+    <meta property="og:image:height" content="909">
+    <meta property="og:image:alt" content="estereograma.py — aprenda a enxergar o que está escondido">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="estereograma.py — laboratório óptico interativo">
+    <meta name="twitter:description" content="Crie autostereogramas no navegador e aprenda a enxergar o que está escondido.">
+    <meta name="twitter:image" content="{{ absolute_url(request, '/static/img/v03/og-estereograma.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
-    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/v03.css') }}">
+    <script src="{{ url_for('static', path='/js/htmx-1.9.12.min.js') }}" defer></script>
 </head>
-<body>
+<body class="v03 {% block body_class %}{% endblock %}">
     <header class="site-header">
-        <a class="logo" href="/">estereograma<span class="ext">.py</span></a>
-        <nav>
-            <a href="/" {% if request.url.path == "/" %}class="ativo"{% endif %}>início</a>
-            <a href="/aprender" {% if request.url.path.startswith("/aprender") %}class="ativo"{% endif %}>aprender</a>
-            <a href="/galeria" {% if request.url.path.startswith("/galeria") %}class="ativo"{% endif %}>galeria</a>
-            <a href="/playground" {% if request.url.path == "/playground" %}class="ativo"{% endif %}>playground</a>
+        <a class="logo" href="/" aria-label="estereograma.py — início">estereograma<span class="ext">.py</span></a>
+        <nav aria-label="Navegação principal">
+            <a href="/studio" {% if request.url.path == "/studio" %}class="ativo" aria-current="page"{% endif %}>Estúdio</a>
+            <a href="/como-ver" {% if request.url.path == "/como-ver" %}class="ativo" aria-current="page"{% endif %}>Como ver</a>
+            <a href="/#obra">Obra</a>
         </nav>
+        <a class="header-cta" href="/studio">Criar agora</a>
     </header>
-    <main>
+    <main class="{% block main_class %}{% endblock %}">
         {% block conteudo %}{% endblock %}
     </main>
 
     <footer class="site-footer">
-        <div class="footer-grid">
-            <div class="col-marca">
-                <p class="footer-logo">estereograma<span>.py</span></p>
-                <p class="footer-tagline">um livro-guia, uma galeria e um gerador de estereogramas, feito em python.</p>
-            </div>
-
-            <div class="col-links">
-                <h4>aprender</h4>
-                <ul>
-                    {% for a in artigos_global %}
-                    <li><a href="/aprender/{{ a.slug }}">{{ a.titulo|lower }}</a></li>
-                    {% endfor %}
-                </ul>
-            </div>
-
-            <div class="col-links">
-                <h4>projeto</h4>
-                <ul>
-                    <li><a href="https://github.com/leonardo-michelotti/estereograma.py" rel="noopener">código no github</a></li>
-                    <li><a href="/galeria">galeria curada</a></li>
-                    <li><a href="/playground">playground</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>código sob mit · conteúdo sob cc by-sa 4.0</p>
-        </div>
+        <span>estereograma.py · laboratório óptico interativo</span>
+        <a href="https://github.com/leonardo-michelotti/estereograma.py" rel="noopener noreferrer">código-fonte ↗</a>
     </footer>
 </body>
 </html>

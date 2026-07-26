@@ -28,6 +28,59 @@ site:
 5. **Acessibilidade educativa.** Cada estereograma exibido tem revelação
    opcional da figura escondida — leigos não devem ficar de fora.
 
+### 1.1 Contexto e limites
+
+```mermaid
+flowchart LR
+    visitante["Visitante no navegador"] --> site["estereograma.py\nFastAPI + Jinja2 + HTMX"]
+    site --> railway["Railway\ncontainer e cache efêmero"]
+    site --> github["GitHub\ncódigo, estudo e dados de benchmark"]
+    pesquisador["Leonardo\nautor e avaliador visual"] --> site
+    pesquisador --> github
+```
+
+O produto público ensina, recebe parâmetros e entrega imagens. O repositório
+guarda a explicação reproduzível de como a engine foi escolhida e medida; o
+Railway não é fonte de verdade de renders ou resultados experimentais.
+
+### 1.2 Componentes da geração
+
+```mermaid
+flowchart LR
+    ui["UI /studio"] --> contrato["GenerationParams\nvalidação Pydantic"]
+    contrato --> service["GenerationService\norquestração e concorrência"]
+    service --> depth["Depth-map factory\npresets e texto"]
+    depth --> v2["Engine V2\nvínculos + visibilidade + pintura"]
+    v2 --> encoder["Encoder PNG"]
+    encoder --> cache["RenderCache\nhash, TTL e limite"]
+    cache --> resposta["/renders/{id}.png"]
+```
+
+`GenerationService` é o limite entre produto e algoritmo. A V2 recebe uma
+imagem de profundidade e configuração imutável, devolvendo uma imagem RGB sem
+conhecer HTTP, cache ou Railway.
+
+### 1.3 Fluxo de uma solicitação
+
+```mermaid
+sequenceDiagram
+    participant U as Navegador
+    participant S as GenerationService
+    participant C as RenderCache
+    participant E as Engine V2
+    U->>S: parâmetros validados
+    S->>C: consulta fingerprint(engine + parâmetros)
+    alt cache hit
+        C-->>S: PNG existente
+    else cache miss
+        S->>S: cria depth map
+        S->>E: render(depth_map, config)
+        E-->>S: imagem RGB
+        S->>C: grava PNG + depth map
+    end
+    S-->>U: IDs, duração e separação dos guias
+```
+
 ---
 
 ## 2. Stack
@@ -36,13 +89,13 @@ site:
 |---|---|---|
 | Backend web | **FastAPI** + **Uvicorn** | Async nativo, tipagem forte, devx excelente |
 | Templates | **Jinja2** | Padrão, integra zero-config com FastAPI |
-| Interatividade | **HTMX** (via CDN) | Form → POST → swap, sem build step nem framework JS |
+| Interatividade | **HTMX** local | Form → POST → swap, sem build step nem framework JS |
 | Processamento de imagem | **NumPy** + **Pillow** | Combo padrão; numpy pro algoritmo, pillow pro I/O |
 | Persistência | **YAML** em disco | Galeria estática, versionada no git |
-| Estilo | CSS puro (Tailwind via CDN se necessário) | Decisão final na Fase 3 |
+| Estilo | CSS puro | Design system próprio, sem build step |
 | Testes | **pytest** | Padrão |
 | Lint | **ruff** | Rápido, substitui flake8 + isort + black |
-| Deploy | **Fly.io** | Free tier generoso, Dockerfile, `fly deploy` |
+| Deploy | **Railway** | Conta existente, Dockerfile e promoção por healthcheck |
 
 ### Versões mínimas
 
@@ -59,12 +112,21 @@ site:
 estereograma.py/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py                 # FastAPI app + todas as rotas
+│   ├── main.py                 # composição FastAPI e dependências compartilhadas
 │   ├── content_loader.py       # loader de Markdown/YAML → list[Artigo]
+│   ├── models/
+│   │   └── generation.py       # contrato validado da geração
+│   ├── routes/
+│   │   ├── studio.py           # Estúdio e compatibilidade legada
+│   │   └── renders.py          # entrega dos PNGs temporários
+│   ├── services/
+│   │   ├── generation_service.py # orquestra depth map, gerador e cache
+│   │   └── render_cache.py     # cache em disco com TTL e limite de tamanho
 │   ├── stereogram/             # ★ NÚCLEO — gerador independente
 │   │   ├── __init__.py
 │   │   ├── __main__.py         # CLI: python -m app.stereogram
-│   │   ├── generator.py        # função principal gerar_estereograma()
+│   │   ├── generator.py        # motor legacy e API histórica
+│   │   ├── generator_v2.py     # motor oficial do Estúdio
 │   │   ├── patterns.py         # depth maps sintéticos (esfera, coração, texto)
 │   │   └── presets.py          # catálogo de presets do playground
 │   ├── content/
@@ -81,7 +143,7 @@ estereograma.py/
 │   │   ├── aprender_indice.html
 │   │   ├── artigo.html
 │   │   ├── galeria.html
-│   │   ├── playground.html
+│   │   ├── studio.html
 │   │   └── partials/
 │   │       └── resultado.html  # fragmento HTMX (imagem gerada)
 │   └── static/
@@ -98,6 +160,10 @@ estereograma.py/
 ├── scripts/
 │   ├── gerar_presets.py        # gera depth maps de preset em static/img/presets/
 │   └── gerar_hero.py           # gera os PNGs estáticos do hero em static/img/hero/
+├── benchmarks/                 # coleta JSONL, schema e relatórios derivados
+├── docs/
+│   ├── ENGINE_STUDY.md         # teoria aplicada, hipóteses e evidências
+│   └── adr/                    # decisões arquiteturais curtas
 ├── tests/
 │   ├── __init__.py
 │   └── test_generator.py
@@ -126,6 +192,8 @@ estereograma.py/
 
 ### 4.1 API pública
 
+A API histórica permanece disponível para a CLI:
+
 ```python
 def gerar_estereograma(
     depth_map: PIL.Image.Image,
@@ -141,7 +209,31 @@ def gerar_estereograma(
 ) -> PIL.Image.Image
 ```
 
-### 4.2 Algoritmo — classes de equivalência (Thimbleby/Inglis/Witten 1994)
+O Estúdio usa a V2:
+
+```python
+@dataclass(frozen=True)
+class RenderConfigV2:
+    width: int = 900
+    height: int = 560
+    eye_separation: int = 216
+    depth: float = 0.26
+    oversample: int = 3
+    occlusion: Literal["conflicts", "visibility"] = "visibility"
+    texture: Literal["organic", "color", "mono", "mosaic"] = "mosaic"
+    seed: int = 24
+
+def render_stereogram_v2(
+    depth_map: PIL.Image.Image,
+    config: RenderConfigV2,
+) -> PIL.Image.Image: ...
+```
+
+`RenderConfigV2`, `render_stereogram_v2` e `ENGINE_VERSION_V2` formam o contrato
+compatível deste ciclo. Não há `Engine` abstrata: uma interface criada antes de
+uma segunda implementação real só esconderia diferenças importantes.
+
+### 4.2 Algoritmos — legacy e V2
 
 Referência canônica: *Displaying 3D Images: Algorithms for Single Image Random
 Dot Stereograms*, IEEE Computer 27(10), 1994. Substitui o método ingênuo de
@@ -193,10 +285,17 @@ para cada y:
 - A fórmula de separação não-linear preserva a percepção de **volume**, não
   só de profundidade chapada.
 
-**Complexidade:** O(largura × altura × α) por linha, onde α é o tamanho médio
+**Complexidade do legacy:** O(largura × altura × α), onde α é o tamanho médio
 da cadeia em `same[]` (efetivamente quase constante com path compression). Em
 Python puro, ~800×600 leva 2–4s; aceitável pro dev. Se virar gargalo no
-playground, vetorizar parte da iteração ou anexar `@numba.njit`.
+playground, vetorizar parte da iteração ou compilar o núcleo.
+
+Na V2, cada linha possui vínculos `look_left`/`look_right` bidirecionais. Uma
+máscara de visibilidade remove pontos encobertos, conflitos preservam a
+superfície mais próxima, e a pintura parte do centro para não favorecer um
+sentido. O cálculo ocorre em largura virtual 3× e termina com downsampling
+Lanczos. A fundamentação, as hipóteses e o método de comparação vivem em
+[`docs/ENGINE_STUDY.md`](docs/ENGINE_STUDY.md).
 
 ### 4.3 Texturas (`_gerar_textura` em generator.py)
 
@@ -239,52 +338,47 @@ Reusável em scripts e CI. Não depende do FastAPI.
 | Rota | Método | Renderiza | Status |
 |---|---|---|---|
 | `/` | GET | `index.html` (hero D1) | ✅ |
+| `/como-ver` | GET | `como_ver.html` (treino guiado em três passos) | ✅ |
+| `/como-funciona` | GET | `como_funciona.html` (pipeline, fórmula e código) | ✅ |
 | `/aprender` | GET | `aprender_indice.html` (lista de artigos) | ✅ |
 | `/aprender/{slug}` | GET | `artigo.html` (artigo com prev/next) | ✅ |
-| `/playground` | GET | `playground.html` (form + presets) | ✅ |
-| `/playground/gerar` | POST | `partials/resultado.html` (HTMX swap) | ✅ |
+| `/studio` | GET | `studio.html` (controles + preview) | ✅ |
+| `/studio/preview` | POST | `partials/studio_result.html` (HTMX swap) | ✅ |
+| `/renders/{id}.png` | GET | PNG temporário do resultado ou depth map | ✅ |
+| `/playground` | GET | redirect permanente para `/studio` | ✅ |
 | `/galeria` | GET | `galeria.html` (placeholder por ora) | ⏳ |
 | `/galeria/{slug}` | GET | detalhe da obra | ⏳ |
 | `/static/*` | GET | arquivos estáticos via `StaticFiles` | ✅ |
 
-### 5.2 Design system (`app/static/css/style.css`)
+### 5.2 Design system (`app/static/css/v03.css`)
 
-CSS puro (~550 linhas), sem build step. Tokens em custom properties na raiz:
+O CSS v0.3 estende a folha legada durante a migração das telas. A direção é um
+laboratório óptico editorial: superfícies claras, grade fina, tipografia forte e
+as cores expressivas concentradas no estereograma.
 
 ```css
 :root {
-    /* Superfícies */
-    --bg: #1A0B2E;      /* fundo principal */
-    --bg-deep: #110720; /* fundo mais profundo (hero, sections alternadas) */
-    --surface: #2B1A47; /* cards, painéis */
-    --surface-2: #3A2560;
-
-    /* Cores de acento */
-    --purple: #B388FF;  --purple-dim: #8B5FD6;
-    --orange: #FFA940;  --orange-dim: #D98724;
-
-    /* Texto */
-    --fg: #F5EFDC;      --fg-dim: #D6CFBA;   --muted: #A296BC;
-
-    /* Glow (box-shadows decorativos) */
-    --glow-orange: 0 8px 32px rgba(255,169,64,.28);
-    --glow-purple: 0 8px 32px rgba(179,136,255,.22);
+    --ink: #11110f;
+    --paper: #f2efe6;
+    --surface-v03: #e8e4d9;
+    --mist-v03: #d9d6cc;
+    --lab-blue: #315cff;
+    --signal-coral: #ff5a45;
+    --white-v03: #fffdf7;
 }
 ```
 
-**Tipografia:** Syne 600–800 (display, h1–h3) · Inter 400–600 (corpo) · JetBrains Mono 400–600 (código, kicker).
+**Tipografia:** Instrument Sans variável para títulos e interface; IBM Plex Mono
+para parâmetros e metadados. Os arquivos e licenças OFL ficam em
+`app/static/fonts/`, sem dependência de Google Fonts em runtime.
 
-**Gradiente em headings:**
-```css
-h1, h2 { background: linear-gradient(120deg, var(--fg), var(--purple), var(--orange));
-         -webkit-background-clip: text; color: transparent; }
-```
+**Motivos próprios:** dois pontos coral de alinhamento, marcas de registro,
+divisórias editoriais e sombra sólida. Não há glow, gradiente de texto ou
+animação contínua sobre a imagem.
 
-**Overlay de ruído:** `<body>` tem `::before` com SVG `feTurbulence` a 5% de opacidade
-(`mix-blend-mode: overlay`) — textura analógica sem imagem extra.
-
-**Reveal toggle (pure CSS):** checkbox `.reveal-toggle` + sibling selector `~` controla
-`opacity` de `.img-reveal` e troca o texto do label (`.lig`/`.des`) sem nenhum JavaScript.
+**Reveal acessível:** checkbox visualmente oculto permanece navegável pelo
+teclado; o sibling selector alterna o mapa de profundidade em 220 ms e mostra
+foco azul explícito.
 
 ### 5.3 Conteúdo educativo (`app/content_loader.py`)
 
@@ -303,10 +397,10 @@ class Artigo:
   `templates.env.globals["artigos_global"] = ARTIGOS`.
 - `vizinhos(artigos, slug)` devolve `(anterior, proximo)` para navegação prev/next.
 
-### 5.4 Padrão HTMX no playground
+### 5.4 Padrão HTMX no Estúdio
 
 ```html
-<form hx-post="/playground/gerar"
+<form hx-post="/studio/preview"
       hx-target="#resultado"
       hx-swap="innerHTML"
       hx-indicator="#carregando">
@@ -318,12 +412,32 @@ class Artigo:
 <div id="resultado"></div>
 ```
 
-O endpoint `/playground/gerar` devolve um fragmento Jinja
-(`partials/resultado.html`) com a tag `<img>` apontando pra um data-URL
-base64 do PNG gerado em memória — evita persistir arquivos.
+O endpoint `/studio/preview` é uma rota síncrona, portanto o FastAPI executa o
+trabalho CPU-bound fora do event loop. Ele devolve um fragmento Jinja com URLs
+para o estereograma e o depth map. Os PNGs ficam num cache temporário em disco,
+com hash determinístico, TTL de 30 minutos e limite total de 100 MB. Nenhum PNG
+é embutido em base64 no HTML.
 
-Para uploads (Fase 4): mesma rota aceita `multipart/form-data` via
+O HTMX 1.9.12 é versionado em `app/static/js/`; não há dependência de CDN em
+runtime. Para uploads (Fase 4), a mesma rota aceitará `multipart/form-data` via
 `UploadFile` do FastAPI.
+
+`app/static/js/studio.js` mantém apenas o estado de interface: alterna Forma e
+Texto, atualiza o rótulo da prévia, preserva o último resultado enquanto o HTMX
+processa uma variação, mostra o fragmento de erro sem swap e monta o link
+reproduzível. O backend continua sendo a fonte de verdade dos parâmetros.
+
+Links de `/studio` aceitam `subject_type`, `subject`, `texture`, `depth`, `seed`
+e `eye_separation`. A página restaura os controles, mas só gera depois de uma
+ação explícita, evitando processamento CPU-bound em um GET compartilhado.
+
+`app/static/js/como-ver.js` controla somente o passo ativo do tutorial, o painel
+de ajuda e a conclusão. As instruções permanecem no HTML e a imagem de treino
+usa o mesmo reveal acessível da Home; nenhuma etapa depende do backend.
+
+`app/static/js/como-funciona.js` atualiza apenas o laboratório visual. O cálculo
+de `sep(z)` replica a fórmula do núcleo para fins educativos com `E=200` e
+`μ=0.333`; ele não gera imagens nem substitui o backend.
 
 ### 5.5 Gerenciamento da galeria
 
@@ -364,10 +478,13 @@ Não há sistema de admin — adicionar obra = commit + push.
 
 ### 6.2 Integração (Fase 2+)
 
-`TestClient` do FastAPI para:
-- Status codes de todas as rotas GET
-- POST `/playground/gerar` retorna fragmento HTML válido contendo `<img>`
-- Upload inválido (formato errado, > tamanho máx) retorna erro amigável
+`TestClient` do FastAPI cobre:
+- renderização e compatibilidade da rota antiga do Estúdio;
+- erro de entrada inválida em fragmento amigável;
+- POST `/studio/preview` retorna URLs, nunca base64;
+- `GET /renders/{id}.png` entrega um PNG válido.
+
+Os testes de serviço cobrem validação de texto e cache hit/miss determinístico.
 
 ### 6.3 Validação manual visual
 
@@ -382,31 +499,28 @@ python -m app.stereogram app/static/img/presets/esfera.png /tmp/test.png --seed 
 
 ## 7. Deploy
 
-### 7.1 Alvo: Fly.io
+### 7.1 Alvo: Railway
 
 Razões:
-- Free tier generoso (~3 VMs pequenas)
-- Dockerfile simples (sem buildpacks mágicos)
-- `fly deploy` direto do CLI
-- Domínio `.fly.dev` grátis pra começar
+- conta e operação já usadas nos projetos Observatório da Educação e Sisyphus;
+- build explícito pelo Dockerfile, sem depender da autodetecção do Railpack;
+- `PORT` injetada pela plataforma e healthcheck antes da troca de tráfego;
+- Project Tokens separados por ambiente para automação com privilégio mínimo.
 
-### 7.2 Dockerfile (esboço pra Fase 2)
+### 7.2 Container e serviço
 
-```dockerfile
-FROM python:3.12-slim
-WORKDIR /app
-COPY pyproject.toml .
-RUN pip install --no-cache-dir .
-COPY app/ ./app/
-EXPOSE 8080
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
-```
+- `Dockerfile` baseado em Python 3.12 slim e usuário sem privilégios.
+- Uvicorn em `0.0.0.0:8080`, um worker por causa do cache local efêmero.
+- `railway.toml` define Dockerfile, `/healthz` e política de reinício.
+- `/healthz` é consultado pelo container e pelo Railway antes da promoção.
+- `PUBLIC_BASE_URL` define canonical, sitemap e URLs absolutas de Open Graph.
+- PNGs gerados são efêmeros; não há volume persistente no lançamento.
+- staging manual antecede qualquer habilitação do workflow de produção.
 
 ### 7.3 Variáveis de ambiente
 
-- `ENV` — `development` | `production`
-- `MAX_UPLOAD_MB` — limite do upload (default 5)
-- `RATE_LIMIT_PER_MIN` — Fase 4
+- `PORT` — porta interna injetada pelo Railway
+- `PUBLIC_BASE_URL` — origem pública sem barra final
 
 ---
 
@@ -420,7 +534,10 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
 | **F2** | FastAPI app + playground + hub educativo fundação | ✅ (falta deploy) |
 | **F3** | Galeria via YAML + obras curadas + páginas de detalhe | ⏳ |
 | **F4** | Upload de depth map no playground + rate limiting | ⏳ |
-| **F5** | SEO básico + analytics (opcional) | ⏳ |
+| **F5** | SEO, segurança e empacotamento para deploy | ✅ (aguarda staging no Railway) |
+| **v0.3 · Fase 1** | contratos, Estúdio, cache e renders por URL | ✅ |
+| **Engine V2 · CPU** | estudo, goldens, benchmark e otimização pura | ✅ (452–477 ms de mediana) |
+| **Engine V2 · WebGL** | fork, coleta GPU e duas sessões A/B cegas | 🧪 laboratório pronto; coleta pendente |
 
 ### Iterações de design (D-series)
 
@@ -436,7 +553,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
 ### Critérios de saída por fase
 
 - **F1:** `pytest` passa + estereograma gerado e o 3D é visível
-- **F2:** site online no `*.fly.dev`, playground gera < 2s sem reload ← **pendente: deploy**
+- **F2:** site online no Railway, Estúdio gera < 2s sem reload ← **pendente: staging**
 - **F3:** ≥ 5 obras na galeria, navegação fluida, reveal funciona
 - **F4:** upload de PNG cinza qualquer → estereograma; inválidos retornam erro amigável
 - **F5:** Lighthouse mobile ≥ 85 em performance e acessibilidade
@@ -450,9 +567,10 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
 | Banco de dados | Nenhum (YAML) | Quando quiser editar galeria pela web |
 | Sistema de contato | Nenhum (e-mail no rodapé) | Se receber spam por scrapping |
 | i18n PT/EN | Só PT-BR | Quando primeiro acesso fora do Brasil |
-| Domínio próprio | `*.fly.dev` | Quando o portfólio for divulgado publicamente |
-| Otimização do gerador | Loop Python puro | Quando geração demorar > 3s percebidos |
-| Análise de oclusão | Não verifica (visible=True implícito) | Se aparecerem artefatos nas bordas de objetos com fortes saltos de profundidade — adicionar o teste de visibilidade do Thimbleby 1994 |
+| Domínio próprio | domínio Railway inicial | Quando o portfólio for divulgado publicamente |
+| Núcleo compilado | Não adotado; V2 Python/NumPy atingiu 500 ms | Revisitar apenas com novo orçamento ou regressão comprovada |
+| Preview WebGL | Fork experimental separado | Somente após benchmark GPU sincronizado e avaliação A/B cega |
+| Extração da engine | Dentro de `app/stereogram/` | Depois de estabilizar API e estratégia de execução |
 | Analytics | Nenhum | Após primeiro mês de tráfego real |
 
 ---

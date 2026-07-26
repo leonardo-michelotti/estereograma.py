@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+
+TEXT_FONT = Path(__file__).resolve().parents[1] / "static" / "fonts" / "InstrumentSans-Variable.ttf"
 
 
 def esfera(
@@ -39,6 +43,23 @@ def coracao(largura: int = 800, altura: int = 600) -> Image.Image:
     return Image.fromarray(img, mode="L")
 
 
+def coracao_em_camadas(largura: int = 800, altura: int = 600) -> Image.Image:
+    """Coração grande com um segundo plano interno, pensado para o treino."""
+    y, x = np.ogrid[:altura, :largura]
+
+    def mascara(escala_x: float, escala_y: float, centro_y: float) -> np.ndarray:
+        nx = (x - largura / 2) / (largura * escala_x)
+        ny = (centro_y - y) / (altura * escala_y)
+        return (nx**2 + ny**2 - 1) ** 3 - nx**2 * ny**3 <= 0
+
+    externo = mascara(0.29, 0.34, altura * 0.48)
+    interno = mascara(0.15, 0.18, altura * 0.49)
+    img = np.zeros((altura, largura), dtype=np.uint8)
+    img[externo] = 165
+    img[interno] = 255
+    return Image.fromarray(img, mode="L")
+
+
 def texto(
     palavra: str,
     largura: int = 800,
@@ -50,17 +71,12 @@ def texto(
     pro fundo (não totalmente preto) — isso dá mais contraste percebido."""
     img = Image.new("L", (largura, altura), profundidade_fundo)
     draw = ImageDraw.Draw(img)
-    # tenta fontes bold conhecidas (Windows/macOS/Linux), cai pra default
-    candidatos = ["arialbd.ttf", "Arial Bold.ttf", "DejaVuSans-Bold.ttf"]
-    font = None
-    for nome in candidatos:
-        try:
-            font = ImageFont.truetype(nome, size=int(altura * 0.55))
-            break
-        except OSError:
-            continue
-    if font is None:
-        font = ImageFont.load_default()
+    font = ImageFont.truetype(
+        TEXT_FONT,
+        size=int(altura * 0.55),
+        layout_engine=ImageFont.Layout.BASIC,
+    )
+    font.set_variation_by_name("Bold")
 
     bbox = draw.textbbox((0, 0), palavra, font=font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
