@@ -1,105 +1,101 @@
 {% extends "base.html" %}
-{% block titulo %}estereograma.py — veja com os dois olhos{% endblock %}
+{% block titulo %}estereograma.py — enxergue o que está escondido{% endblock %}
+{% block body_class %}home-page{% endblock %}
+{% block main_class %}home-main{% endblock %}
 
 {% block conteudo %}
-<section class="hero">
-    <div class="hero-texto">
-        <p class="kicker">estereograma<span>.py</span></p>
-        <h1>veja com os <em>dois</em> olhos.</h1>
-        <p class="lead">
-            Imagens 2D que escondem cenas 3D — quando você olha do jeito certo,
-            uma forma emerge. Aqui você aprende como funcionam, vê uma galeria
-            curada e gera os seus próprios.
-        </p>
-        <div class="cta">
-            <a href="/aprender" class="botao primario">começar a aprender</a>
-            <a href="/playground" class="botao terciario">pular pro playground →</a>
+<section class="v03-hero" aria-labelledby="home-title">
+    <div class="v03-hero-copy">
+        <p class="v03-eyebrow">Laboratório óptico interativo</p>
+        <h1 id="home-title">Aprenda a enxergar o que está escondido.</h1>
+        <p class="v03-lead">Crie autostereogramas no navegador, sem cadastro e sem precisar entender a matemática primeiro.</p>
+        <div class="v03-actions">
+            <a class="v03-button v03-button--primary" href="/studio">Criar o meu</a>
+            <a class="v03-button v03-button--text" href="/como-ver">Me ensina a ver <span aria-hidden="true">→</span></a>
         </div>
+        <dl class="v03-facts" aria-label="Características do produto">
+            <div><dt>sem conta</dt><dd>primeiro resultado livre</dd></div>
+            <div><dt>reveal</dt><dd>o mistério é acessível</dd></div>
+            <div><dt>open source</dt><dd>feito em Python</dd></div>
+        </dl>
     </div>
 
-    <div class="hero-stereo">
-        <input type="checkbox" id="reveal-hero" class="reveal-toggle">
-        <div class="hero-stereo-imagens">
-            <img src="{{ url_for('static', path='/img/hero/coracao_estereo.png') }}"
-                 alt="Estereograma de um coração — cruze os olhos para revelar a figura escondida"
-                 class="img-stereo">
-            <img src="{{ url_for('static', path='/img/hero/coracao_depth.png') }}"
-                 alt="A figura escondida: um coração"
-                 class="img-reveal">
+    <div class="v03-optical-stage">
+        <div class="v03-alignment" aria-label="Dois pontos de alinhamento para visão paralela"><i></i><i></i></div>
+        <input class="v03-reveal-toggle" type="checkbox" id="reveal-home">
+        <div class="v03-image-frame v03-image-frame--hero">
+            <img src="{{ url_for('static', path='/img/v03/hero-estereograma.png') }}?v=5"
+                 alt="Autostereograma amarelo com um coração em duas camadas escondido">
+            <img class="v03-depth" src="{{ url_for('static', path='/img/v03/hero-depth.png') }}?v=5"
+                 alt="Mapa de profundidade que revela um coração em duas camadas">
+            <span class="v03-registration v03-registration--top">+ 00.26</span>
+            <span class="v03-registration v03-registration--bottom">GUIDE 108 · V2.0</span>
         </div>
-        <label for="reveal-hero" class="reveal-btn">
-            <span class="lig">esconder figura</span>
-            <span class="des">ver figura escondida</span>
+        <label class="v03-reveal-label" for="reveal-home">
+            <span class="is-hidden">Revelar figura</span><span class="is-visible">Voltar ao estereograma</span>
         </label>
     </div>
 </section>
 
-<section class="tutorial">
-    <h2>nunca conseguiu ver?</h2>
-    <div class="tutorial-grid">
-        <div class="tutorial-passos">
-            <ol>
-                <li>aproxime o rosto da tela, quase encostando.</li>
-                <li>relaxe o foco — olhe "através" da imagem, como se mirasse algo atrás dela.</li>
-                <li>afaste devagar mantendo o relaxamento.</li>
-                <li>o cérebro leva alguns segundos. quando trava, a forma surge inteira.</li>
-            </ol>
-            <p class="tutorial-nota">
-                persistência ajuda. cerca de 5–10% das pessoas não conseguem fundir —
-                <a href="/aprender/visao-binocular">por que isso acontece</a>.
-            </p>
-        </div>
+<section class="v03-journey" aria-label="Como começar">
+    <article><span>01</span><h2>Alinhe</h2><p>Aproxime o rosto e relaxe o foco até os pontos se fundirem.</p></article>
+    <article><span>02</span><h2>Perceba</h2><p>Afaste-se devagar; a forma aparece atrás da superfície.</p></article>
+    <article><span>03</span><h2>Crie</h2><p>Escolha o que esconder, a textura e a intensidade da profundidade.</p></article>
+</section>
 
-        <div class="tutorial-imagem">
-            <input type="checkbox" id="reveal-mini" class="reveal-toggle">
-            <div class="hero-stereo-imagens">
-                <img src="{{ url_for('static', path='/img/hero/mini_estereo.png') }}"
-                     alt="Mini estereograma de uma esfera para praticar"
-                     class="img-stereo">
-                <img src="{{ url_for('static', path='/img/hero/mini_depth.png') }}"
-                     alt="A figura escondida: uma esfera"
-                     class="img-reveal">
+<section class="v03-section v03-works" id="obra" aria-labelledby="works-title">
+    <div class="v03-section-heading">
+        <div><p class="v03-eyebrow">Obras geradas pelo projeto</p><h2 id="works-title">Primeiro estranhe.<br>Depois enxergue.</h2></div>
+        <p>Três resultados reais do gerador Python. Cada imagem pode revelar o mapa usado para construir sua profundidade.</p>
+    </div>
+    <div class="v03-work-grid">
+        <article class="v03-work-card">
+            <input class="v03-reveal-toggle" type="checkbox" id="reveal-orbita">
+            <div class="v03-image-frame">
+                <img src="{{ url_for('static', path='/img/v03/obra-orbita.png') }}" alt="Autostereograma orgânico chamado Órbita">
+                <img class="v03-depth" src="{{ url_for('static', path='/img/v03/hero-depth.png') }}?v=5" alt="Mapa de profundidade em forma de coração">
             </div>
-            <label for="reveal-mini" class="reveal-btn small">
-                <span class="lig">esconder</span>
-                <span class="des">ver resposta</span>
-            </label>
-        </div>
+            <div class="v03-work-meta"><div><span>01 · esfera</span><h3>Órbita</h3></div><label for="reveal-orbita">Revelar</label></div>
+        </article>
+        <article class="v03-work-card">
+            <input class="v03-reveal-toggle" type="checkbox" id="reveal-pulso">
+            <div class="v03-image-frame">
+                <img src="{{ url_for('static', path='/img/v03/obra-pulso.png') }}" alt="Autostereograma colorido chamado Pulso">
+                <img class="v03-depth" src="{{ url_for('static', path='/img/v03/depth-coracao.png') }}" alt="Mapa de profundidade em forma de coração da obra Pulso">
+            </div>
+            <div class="v03-work-meta"><div><span>02 · coração</span><h3>Pulso</h3></div><label for="reveal-pulso">Revelar</label></div>
+        </article>
+        <article class="v03-work-card">
+            <input class="v03-reveal-toggle" type="checkbox" id="reveal-tipo">
+            <div class="v03-image-frame">
+                <img src="{{ url_for('static', path='/img/v03/obra-texto.png') }}" alt="Autostereograma monocromático com texto escondido">
+                <img class="v03-depth" src="{{ url_for('static', path='/img/v03/depth-texto.png') }}" alt="Mapa de profundidade com o texto 3D">
+            </div>
+            <div class="v03-work-meta"><div><span>03 · texto</span><h3>Tipo profundo</h3></div><label for="reveal-tipo">Revelar</label></div>
+        </article>
     </div>
 </section>
 
-<section class="portas">
-    <h2>três portas</h2>
-    <p class="lead-portas">escolha pelo interesse — tudo se conecta.</p>
-    <div class="portas-grid">
-        <a href="/aprender" class="porta">
-            <span class="porta-num">01</span>
-            <h3>aprender</h3>
-            <p>seis partes, de wheatstone 1838 ao algoritmo que você acaba de usar.</p>
-            <span class="porta-seta">entrar →</span>
-        </a>
-        <a href="/galeria" class="porta">
-            <span class="porta-num">02</span>
-            <h3>galeria</h3>
-            <p>coleção curada de obras em domínio público e licença aberta.</p>
-            <span class="porta-seta">explorar →</span>
-        </a>
-        <a href="/playground" class="porta">
-            <span class="porta-num">03</span>
-            <h3>playground</h3>
-            <p>escolha uma forma, ajuste profundidade, gere em segundos.</p>
-            <span class="porta-seta">gerar →</span>
-        </a>
+<section class="v03-section v03-process" aria-labelledby="process-title">
+    <div class="v03-section-heading">
+        <div><p class="v03-eyebrow">Como funciona</p><h2 id="process-title">Profundidade vira deslocamento.</h2></div>
+        <p>O mapa claro-escuro define o relevo. O algoritmo transforma essa diferença em repetições horizontais que os dois olhos fundem.</p>
     </div>
+    <ol class="v03-process-grid">
+        <li><span>01</span><img src="{{ url_for('static', path='/img/v03/hero-depth.png') }}?v=5" alt="Mapa de profundidade de um coração"><h3>Mapa</h3><p>Branco vem para perto; preto permanece ao fundo.</p></li>
+        <li><span>02</span><div class="v03-shift-diagram" aria-hidden="true"><i></i><i></i><i></i></div><h3>Deslocamento</h3><p>Cada profundidade altera a distância entre pixels equivalentes.</p></li>
+        <li><span>03</span><img src="{{ url_for('static', path='/img/v03/hero-estereograma.png') }}?v=5" alt="Resultado final do autostereograma"><h3>Fusão</h3><p>Seu cérebro combina as repetições e reconstrói o volume.</p></li>
+    </ol>
+    <div class="v03-process-action"><a class="v03-button v03-button--text" href="/como-funciona">Ver a matemática em movimento <span aria-hidden="true">→</span></a></div>
 </section>
 
-<section class="sobre">
-    <h2>sobre o projeto</h2>
-    <p>
-        feito do zero em python por <a href="https://github.com/leonardo-michelotti">leonardo michelotti</a>.
-        gerador usa o algoritmo de classes de equivalência (<em>thimbleby, inglis & witten 1994</em>),
-        site em fastapi + jinja + htmx, conteúdo em markdown. tudo de código aberto
-        — <a href="https://github.com/leonardo-michelotti/estereograma.py" rel="noopener">no github</a>.
-    </p>
+<section class="v03-open-source" id="sobre" aria-labelledby="about-title">
+    <p class="v03-eyebrow">Open source · feito em Python</p>
+    <h2 id="about-title">A ilusão é visual.<br>O código é transparente.</h2>
+    <p>O gerador V2 combina restrições de pixels, visibilidade e resolução de conflitos para produzir autostereogramas reais. A experiência usa FastAPI, Jinja e HTMX, sem cadastro e sem esconder a matemática de quem quiser aprofundar.</p>
+    <div class="v03-actions">
+        <a class="v03-button v03-button--primary" href="/studio">Abrir o Estúdio</a>
+        <a class="v03-button v03-button--text" href="https://github.com/leonardo-michelotti/estereograma.py" rel="noopener">Ver o código <span aria-hidden="true">↗</span></a>
+    </div>
 </section>
 {% endblock %}

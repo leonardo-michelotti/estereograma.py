@@ -39,6 +39,23 @@ def coracao(largura: int = 800, altura: int = 600) -> Image.Image:
     return Image.fromarray(img, mode="L")
 
 
+def coracao_em_camadas(largura: int = 800, altura: int = 600) -> Image.Image:
+    """Coração grande com um segundo plano interno, pensado para o treino."""
+    y, x = np.ogrid[:altura, :largura]
+
+    def mascara(escala_x: float, escala_y: float, centro_y: float) -> np.ndarray:
+        nx = (x - largura / 2) / (largura * escala_x)
+        ny = (centro_y - y) / (altura * escala_y)
+        return (nx**2 + ny**2 - 1) ** 3 - nx**2 * ny**3 <= 0
+
+    externo = mascara(0.29, 0.34, altura * 0.48)
+    interno = mascara(0.15, 0.18, altura * 0.49)
+    img = np.zeros((altura, largura), dtype=np.uint8)
+    img[externo] = 165
+    img[interno] = 255
+    return Image.fromarray(img, mode="L")
+
+
 def texto(
     palavra: str,
     largura: int = 800,

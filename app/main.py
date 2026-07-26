@@ -1,32 +1,45 @@
-"""FastAPI app — estereograma.py portfolio."""
+"""Composição da aplicação FastAPI do estereograma.py."""
 
 from __future__ import annotations
 
-import base64
-import io
 from pathlib import Path
 
-from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from PIL import Image
 
-from app.content_loader import artigo_por_slug, carregar_artigos, vizinhos
-from app.stereogram.generator import gerar_estereograma
-from app.stereogram.presets import PRESETS, caminho_arquivo, preset_por_slug
+from app.config import absolute_url, canonical_url
+from app.routes.renders import create_renders_router
+from app.routes.studio import create_studio_router
+from app.services.generation_service import GenerationService
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
-CONTENT_DIR = BASE_DIR / "content"
-
 app = FastAPI(title="estereograma.py", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
+templates.env.globals["absolute_url"] = absolute_url
+templates.env.globals["canonical_url"] = canonical_url
+generation_service = GenerationService(STATIC_DIR)
+app.include_router(create_studio_router(templates, generation_service))
+app.include_router(create_renders_router(generation_service))
 
-ARTIGOS = carregar_artigos(CONTENT_DIR / "aprender")
-templates.env.globals["artigos_global"] = ARTIGOS
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; img-src 'self'; font-src 'self'; style-src 'self'; "
+        "script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; "
+        "form-action 'self'; frame-ancestors 'none'"
+    )
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    return response
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -34,86 +47,59 @@ async def index(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "index.html", {})
 
 
-@app.get("/aprender", response_class=HTMLResponse)
-async def aprender_indice(request: Request) -> HTMLResponse:
-    tempo_total = sum(a.tempo_leitura for a in ARTIGOS)
-    prontos = sum(1 for a in ARTIGOS if not a.esboco)
-    esbocos = sum(1 for a in ARTIGOS if a.esboco)
-    return templates.TemplateResponse(
-        request,
-        "aprender_indice.html",
-        {
-            "artigos": ARTIGOS,
-            "tempo_total": tempo_total,
-            "prontos": prontos,
-            "esbocos": esbocos,
-        },
+@app.get("/como-ver", response_class=HTMLResponse)
+async def como_ver(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "como_ver.html", {})
+
+
+@app.get("/como-funciona", response_class=HTMLResponse)
+async def como_funciona(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "como_funciona.html", {})
+
+
+@app.get("/healthz", include_in_schema=False)
+async def healthz() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse, include_in_schema=False)
+async def robots(request: Request) -> str:
+    return f"User-agent: *\nAllow: /\nSitemap: {absolute_url(request, '/sitemap.xml')}\n"
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def sitemap(request: Request) -> Response:
+    urls = ("/", "/studio", "/como-ver", "/como-funciona")
+    items = "".join(f"<url><loc>{absolute_url(request, path)}</loc></url>" for path in urls)
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        f"{items}</urlset>"
     )
+    return Response(xml, media_type="application/xml")
 
 
-@app.get("/aprender/{slug}", response_class=HTMLResponse)
-async def aprender_artigo(request: Request, slug: str) -> HTMLResponse:
-    artigo = artigo_por_slug(ARTIGOS, slug)
-    if artigo is None:
+@app.get("/aprender", include_in_schema=False)
+async def aprender_indice() -> RedirectResponse:
+    return RedirectResponse("/como-ver", status_code=308)
+
+
+@app.get("/aprender/{slug}", include_in_schema=False)
+async def aprender_artigo(slug: str) -> RedirectResponse:
+    destinos = {
+        "o-que-sao": "/como-ver",
+        "historia": "/como-ver",
+        "visao-binocular": "/como-ver",
+        "teoria": "/como-funciona",
+        "calculo": "/como-funciona",
+        "algoritmo": "/como-funciona",
+    }
+    destino = destinos.get(slug)
+    if destino is None:
         raise HTTPException(status_code=404, detail=f"Artigo não encontrado: {slug}")
-    anterior, proximo = vizinhos(ARTIGOS, slug)
-    return templates.TemplateResponse(
-        request,
-        "artigo.html",
-        {
-            "artigo": artigo,
-            "artigos": ARTIGOS,
-            "anterior": anterior,
-            "proximo": proximo,
-        },
-    )
+    return RedirectResponse(destino, status_code=308)
 
 
-@app.get("/galeria", response_class=HTMLResponse)
-async def galeria(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request, "galeria.html", {"obras": []})
-
-
-@app.get("/playground", response_class=HTMLResponse)
-async def playground(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request,
-        "playground.html",
-        {"presets": PRESETS},
-    )
-
-
-@app.post("/playground/gerar", response_class=HTMLResponse)
-async def playground_gerar(
-    request: Request,
-    preset: str = Form(...),
-    textura: str = Form("pink_noise"),
-    seed: int | None = Form(None),
-    mu: float = Form(0.333),
-    eye_separation: int = Form(200),
-) -> HTMLResponse:
-    p = preset_por_slug(preset)
-    if p is None:
-        raise HTTPException(status_code=400, detail=f"Preset desconhecido: {preset}")
-
-    depth = Image.open(caminho_arquivo(p, STATIC_DIR))
-    resultado = gerar_estereograma(
-        depth_map=depth,
-        largura=800,
-        altura=600,
-        eye_separation=eye_separation,
-        mu=mu,
-        textura=textura,  # type: ignore[arg-type]
-        seed=seed,
-    )
-
-    buffer = io.BytesIO()
-    resultado.save(buffer, format="PNG", optimize=True)
-    b64 = base64.b64encode(buffer.getvalue()).decode("ascii")
-    data_url = f"data:image/png;base64,{b64}"
-
-    return templates.TemplateResponse(
-        request,
-        "partials/resultado.html",
-        {"imagem": data_url, "preset": p, "dica": p.dica},
-    )
+@app.get("/galeria", include_in_schema=False)
+async def galeria() -> RedirectResponse:
+    return RedirectResponse("/#obra", status_code=308)

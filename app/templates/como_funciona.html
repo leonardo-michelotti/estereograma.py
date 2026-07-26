@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block titulo %}Como funciona — estereograma.py{% endblock %}
+{% block descricao %}Entenda visualmente como mapas de profundidade e deslocamentos de pixels criam um autostereograma.{% endblock %}
+{% block body_class %}how-page{% endblock %}
+{% block main_class %}how-main{% endblock %}
+
+{% block conteudo %}
+<section class="v03-how" aria-labelledby="how-title">
+    <header class="v03-how-hero">
+        <p class="v03-eyebrow">Como funciona · antes da fórmula</p>
+        <h1 id="how-title">A profundidade nasce de um deslocamento.</h1>
+        <p>O estereograma não desenha um objeto. Ele organiza repetições para que cada olho encontre o mesmo pixel em posições ligeiramente diferentes.</p>
+    </header>
+
+    <section class="v03-pipeline" aria-labelledby="pipeline-title">
+        <h2 id="pipeline-title" class="v03-visually-hidden">Do mapa ao volume</h2>
+        <article>
+            <span>01 · entrada</span>
+            <div class="v03-pipeline-image"><img src="{{ url_for('static', path='/img/v03/hero-depth.png') }}?v=4" alt="Mapa de profundidade de um coração"></div>
+            <h3>Mapa de profundidade</h3>
+            <p>Cada tom de cinza é uma distância: preto fica no fundo, branco vem para perto.</p>
+        </article>
+        <article>
+            <span>02 · restrição</span>
+            <div class="v03-constraint-preview" aria-hidden="true"><i></i><i></i><b></b><em>mesma cor</em></div>
+            <h3>Pixels equivalentes</h3>
+            <p>O algoritmo une os pixels que os dois olhos devem reconhecer como o mesmo ponto.</p>
+        </article>
+        <article>
+            <span>03 · saída</span>
+            <div class="v03-pipeline-image"><img src="{{ url_for('static', path='/img/v03/hero-estereograma.png') }}?v=4" alt="Autostereograma final com coração escondido"></div>
+            <h3>Volume percebido</h3>
+            <p>Ao fundir as repetições, o cérebro interpreta a diferença horizontal como profundidade.</p>
+        </article>
+    </section>
+
+    <section class="v03-depth-lab" aria-labelledby="lab-title">
+        <div class="v03-depth-copy">
+            <p class="v03-eyebrow">Laboratório de separação</p>
+            <h2 id="lab-title">Mova a profundidade.</h2>
+            <p>O controle altera <code>z</code>, a profundidade normalizada. Observe como muda a separação entre os pixels equivalentes.</p>
+
+            <label class="v03-depth-control" for="depth-z">
+                <span>profundidade z</span>
+                <output id="depth-z-value" for="depth-z">0.50</output>
+            </label>
+            <input id="depth-z" type="range" min="0" max="100" value="50" step="1">
+            <div class="v03-depth-legend"><span>0 · fundo</span><span>1 · perto</span></div>
+        </div>
+
+        <div class="v03-separation-demo">
+            <div class="v03-demo-ruler"><span>0</span><i></i><i></i><i></i><span>200 px</span></div>
+            <div class="v03-pixel-pair" aria-hidden="true"><i></i><i></i><b></b></div>
+            <dl>
+                <div><dt>separação calculada</dt><dd><output id="separation-value">91</output> px</dd></div>
+                <div><dt>eye separation</dt><dd>200 px</dd></div>
+                <div><dt>μ</dt><dd>0.333</dd></div>
+            </dl>
+            <p id="separation-explanation" aria-live="polite">No meio do relevo, os pixels formam um par confortável para a fusão.</p>
+        </div>
+    </section>
+
+    <section class="v03-formula" aria-labelledby="formula-title">
+        <div>
+            <p class="v03-eyebrow">Agora a fórmula</p>
+            <h2 id="formula-title">Uma regra geométrica, linha por linha.</h2>
+            <p>A fórmula modela a distância entre os olhos e reduz a separação à medida que o ponto se aproxima. Depois, o motor descarta superfícies ocultas e preserva o vínculo visível mais próximo.</p>
+        </div>
+        <div class="v03-equation" aria-label="separação de z é igual a um menos mu vezes z, multiplicado por E, dividido por dois menos mu vezes z">
+            <span>sep(z)</span><b>=</b><span class="v03-fraction"><i>(1 − μz) · E</i><i>2 − μz</i></span>
+            <dl><div><dt>z</dt><dd>profundidade 0–1</dd></div><div><dt>E</dt><dd>distância dos olhos</dd></div><div><dt>μ</dt><dd>intensidade do relevo</dd></div></dl>
+        </div>
+    </section>
+
+    <section class="v03-engineering" aria-labelledby="engineering-title">
+        <div class="v03-engineering-copy">
+            <p class="v03-eyebrow">Engenharia da engine</p>
+            <h2 id="engineering-title">Qualidade antes de velocidade.</h2>
+            <p>Primeiro congelamos seis imagens de referência. Depois medimos, encontramos o custo dominante e aceleramos a V2 sem trocar um único pixel.</p>
+            <a class="v03-button v03-button--text" href="https://github.com/leonardo-michelotti/estereograma.py/blob/main/docs/ENGINE_STUDY.md" rel="noopener">Ler estudo, dados e decisões no GitHub ↗</a>
+        </div>
+        <div class="v03-engineering-board">
+            <ol class="v03-engine-flow" aria-label="Fluxo de geração e medição">
+                <li><span>01</span>parâmetros</li>
+                <li><span>02</span>mapa de profundidade</li>
+                <li><span>03</span>render V2</li>
+                <li><span>04</span>PNG + cache</li>
+            </ol>
+            <dl class="v03-engine-metrics">
+                <div><dt>58–63%</dt><dd>menos tempo que o baseline</dd></div>
+                <div><dt>452–477 ms</dt><dd>mediana em 900 × 560 / 3×</dd></div>
+                <div><dt>6 / 6</dt><dd>goldens com RGB idêntico</dd></div>
+            </dl>
+            <p>Resultado local verificado; performance varia conforme a máquina.</p>
+        </div>
+    </section>
+
+    <section class="v03-code-section" aria-labelledby="code-title">
+        <div>
+            <p class="v03-eyebrow">O código real</p>
+            <h2 id="code-title">A intuição vira Python.</h2>
+            <p>Este é o núcleo usado pelo V2 para calcular o par de cada pixel. Antes de criar o vínculo, ele confirma a visibilidade e resolve conflitos em favor da superfície mais próxima.</p>
+            <div class="v03-actions"><a class="v03-button v03-button--primary" href="/studio">Testar no Estúdio</a><a class="v03-button v03-button--text" href="https://github.com/leonardo-michelotti/estereograma.py/blob/main/app/stereogram/generator_v2.py" rel="noopener">Abrir o módulo completo ↗</a></div>
+        </div>
+        <pre><code><span>z</span> = z_row[x]
+sep = int(round(
+    (1.0 - mu * <span>z</span>) * E
+    / (2.0 - mu * <span>z</span>)
+))
+
+left = x - sep // 2
+right = left + sep
+
+if visible[x] and 0 &lt;= left and right &lt; width:
+    if current_constraint_is_nearer:
+        look_left[right] = left
+        look_right[left] = right</code></pre>
+    </section>
+</section>
+<script src="{{ url_for('static', path='/js/como-funciona.js') }}" defer></script>
+{% endblock %}

@@ -23,3 +23,17 @@ dist/
 
 # Artefatos locais de validação (regeneráveis via CLI do gerador)
 exemplos/
+
+# Benchmarks exploratórios; somente marcos reproduzíveis são versionados
+benchmarks/data/*.jsonl
+!benchmarks/data/baseline.jsonl
+!benchmarks/data/optimized.jsonl
+!benchmarks/data/webgl.jsonl
+benchmarks/reports/*.md
+!benchmarks/reports/baseline.md
+!benchmarks/reports/optimized.md
+!benchmarks/reports/comparison.md
+!benchmarks/reports/profile-baseline.md
+!benchmarks/reports/profile-optimized.md
+!benchmarks/reports/webgl.md
+benchmarks/sessions/

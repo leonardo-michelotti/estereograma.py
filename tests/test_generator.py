@@ -65,3 +65,11 @@ def test_pink_noise_e_default():
     # Garante que o default pink_noise funciona sem erro
     saida = gerar_estereograma(depth, largura=100, altura=100, seed=42)
     assert saida.size == (100, 100)
+
+
+def test_textura_laboratorio_e_deterministica():
+    depth = esfera(160, 120)
+    a = gerar_estereograma(depth, 160, 120, textura="laboratorio", seed=24)
+    b = gerar_estereograma(depth, 160, 120, textura="laboratorio", seed=24)
+    assert np.array_equal(np.array(a), np.array(b))
+    assert len(np.unique(np.array(a).reshape(-1, 3), axis=0)) >= 4

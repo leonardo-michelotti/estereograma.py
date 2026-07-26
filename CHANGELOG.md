@@ -6,16 +6,84 @@ Versionamento: [SemVer](https://semver.org/).
 ## [não publicado]
 
 ### Workstream A — Gerador
-- _Em desenvolvimento_
+- Motor V2 integrado localmente ao `GenerationService`, com separação simétrica,
+  remoção de superfícies ocultas, resolução de conflitos e oversampling 3×.
+- Paleta mosaico aprovada como padrão; texturas orgânica, colorida e mono foram
+  preservadas no contrato público do Estúdio.
+- Fingerprint do cache versionado por engine e separação real dos pontos-guia
+  incluída no resultado da geração.
+- Motor legacy preservado para a CLI e para comparação de regressões.
+- Contrato `GenerationParams` valida conteúdo, textura, profundidade, seed e
+  limites dos parâmetros avançados antes de chamar o núcleo matemático.
+- `GenerationService` orquestra presets e texto personalizado sem acoplar o
+  gerador puro à camada HTTP.
+- Cache temporário de PNG com hash determinístico, TTL de 30 minutos e limite
+  de 100 MB; resultados repetidos não são processados novamente.
 
 ### Workstream B — Conteúdo & Site
-- Artigos 2–6 completos (história, visão binocular, teoria, cálculo, algoritmo)
-- Galeria curada com obras CC/domínio público
-- D2: redesign `/aprender` com trilha visual e indicadores de progresso
-- D3: página de artigo — TOC lateral fixo, drop cap, sidenotes, navegação prev/next
+- Estereograma principal da Home substituído pelo coração V2 aprovado, com
+  depth map em duas camadas e pontos-guia calibrados para 108 px.
+- Nova página `/como-funciona` com pipeline visual, simulador de profundidade
+  usando a fórmula real, explicação das variáveis e trecho do gerador Python.
+- Novo percurso `/como-ver` com treino de visão paralela em três passos,
+  imagem real, pontos de alinhamento, reveal, ajuda não bloqueante e conclusão
+  encaminhando ao Estúdio.
+- Home v0.3 implementada no sistema “laboratório óptico editorial”, com hero,
+  estereograma real, reveal acessível, jornada em três passos, obras, explicação
+  do algoritmo e bloco open source.
+- Layout responsivo alinhado às referências de 1440, 390 e largura mínima de
+  320 px.
+- Novo Estúdio em `/studio`, com formas, texto de até 12 caracteres, quatro
+  texturas, três níveis de profundidade, reveal e download.
+- Estúdio migrado para o sistema visual v0.3: controles segmentados, tiles de
+  forma e textura, preview dominante, avançado recolhido e layout mobile com o
+  canvas antes dos controles.
+- Nova variação preserva o resultado anterior durante o processamento; falhas
+  usam o estado de erro aprovado sem apagar a imagem válida.
+- “Copiar link” inclui conteúdo, textura, profundidade, seed e conforto visual;
+  abrir o link restaura os controles para reprodução.
+- Renders e depth maps entregues por `/renders/{id}.png`; imagens deixaram de
+  ser embutidas em base64 nos fragmentos HTML.
+- `/playground` redireciona para o novo Estúdio.
+- Estado de erro amigável preserva o último resultado válido no navegador.
+- Rotas antigas de artigos e galeria redirecionam para as experiências completas,
+  sem publicar skeletons ou páginas placeholder.
+- Metadados Open Graph/X, imagem social própria, canonical, `robots.txt` e
+  `sitemap.xml` preparados para o lançamento.
+- README refeito como vitrine do produto, alinhado ao laboratório óptico
+  editorial e organizado por experiência, engine, evidências e reprodução.
 
 ### Infra
-- Dockerfile + `fly.toml` (Fly.io)
+- Instrument Sans e IBM Plex Mono hospedadas localmente, com licenças OFL.
+- HTMX 1.9.12 versionado e servido pela própria aplicação.
+- Testes de contrato, cache, rota do Estúdio, compatibilidade e entrega de PNG.
+- Cabeçalhos CSP, proteção contra framing e política restrita de permissões.
+- Limite de duas gerações simultâneas por processo, com erro recuperável.
+- Dockerfile não-root, `/healthz` e `railway.toml` para Railway.
+- Workflows separados de staging e produção, ambos desabilitados até receberem
+  tokens de projeto e autorização explícita.
+- Primeiro staging publicado no Railway e validado de ponta a ponta, incluindo
+  geração e entrega de PNG pelo domínio público temporário.
+- Produção publicada após aprovação do staging e validada no domínio Railway,
+  com healthcheck, páginas, geração, SEO e segurança respondendo corretamente.
+- Licença MIT do código e aviso CC BY-SA 4.0 do conteúdo adicionados.
+
+### Workstream C — Estudo da engine
+- Estudo aplicado documenta estereopsia, disparidade, oclusão, ecos,
+  oversampling, limites de paralelização e a consequência prática de cada
+  conceito.
+- Cinco ADRs registram clean-room MIT, goldens, estratégia CPU/WebGL, gatilho
+  de extração e governança dos benchmarks.
+- Pipeline JSONL validado por Pydantic guarda configuração, ambiente
+  sanitizado, Git SHA, hash da fonte, duração e hash RGB; relatórios são
+  derivados e dados oficiais são imutáveis.
+- Seis goldens protegem legacy e V2 pixel a pixel.
+- V2 pura otimizada de 1.124–1.224 ms para 452–477 ms de mediana em
+  900×560/3×, mantendo p95 abaixo de 495 ms e `CV ≤ 5%`.
+- Coleta WebGL por timer query aprovada com 0,76–0,84 ms de mediana GPU,
+  exportação PNG separada e `CV ≤ 1,63%`.
+- Galeria A/B cega preparada; integração ao produto continua bloqueada até duas
+  avaliações visuais em dias diferentes.
 
 ---
 
