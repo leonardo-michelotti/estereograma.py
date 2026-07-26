@@ -34,3 +34,8 @@ python -m benchmarks.goldens --write-initial
 
 Depois disso, `python -m benchmarks.goldens` apenas verifica. Regenerar exige
 novo ADR, bump de engine e invalidação consciente do cache.
+
+O caso canônico de texto usa `tests/fixtures/depth-maps/texto-3d-v1.png` como
+entrada. Isso isola o contrato RGB da engine da rasterização de fontes do sistema.
+A geração de novos textos usa a Instrument Sans versionada pelo projeto e possui
+um teste de determinismo separado.

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, replace
+from pathlib import Path
 from typing import Literal
 
 from PIL import Image
@@ -14,9 +15,10 @@ from app.stereogram.generator_v2 import (
     RenderConfigV2,
     render_stereogram_v2,
 )
-from app.stereogram.patterns import coracao_em_camadas, esfera, texto
+from app.stereogram.patterns import coracao_em_camadas, esfera
 
 EngineName = Literal["legacy", "v2"]
+DEPTH_FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "depth-maps"
 
 
 @dataclass(frozen=True)
@@ -53,7 +55,11 @@ def _heart(width: int, height: int) -> Image.Image:
 
 
 def _text(width: int, height: int) -> Image.Image:
-    return texto("3D", width, height, profundidade_fundo=20)
+    with Image.open(DEPTH_FIXTURES / "texto-3d-v1.png") as fixture:
+        depth = fixture.convert("L")
+    if depth.size != (width, height):
+        raise ValueError("o mapa canônico de texto exige resolução 900x560")
+    return depth
 
 
 def _sphere(width: int, height: int) -> Image.Image:

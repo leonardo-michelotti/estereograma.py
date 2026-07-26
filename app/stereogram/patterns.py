@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+
+TEXT_FONT = Path(__file__).resolve().parents[1] / "static" / "fonts" / "InstrumentSans-Variable.ttf"
 
 
 def esfera(
@@ -67,17 +71,12 @@ def texto(
     pro fundo (não totalmente preto) — isso dá mais contraste percebido."""
     img = Image.new("L", (largura, altura), profundidade_fundo)
     draw = ImageDraw.Draw(img)
-    # tenta fontes bold conhecidas (Windows/macOS/Linux), cai pra default
-    candidatos = ["arialbd.ttf", "Arial Bold.ttf", "DejaVuSans-Bold.ttf"]
-    font = None
-    for nome in candidatos:
-        try:
-            font = ImageFont.truetype(nome, size=int(altura * 0.55))
-            break
-        except OSError:
-            continue
-    if font is None:
-        font = ImageFont.load_default()
+    font = ImageFont.truetype(
+        TEXT_FONT,
+        size=int(altura * 0.55),
+        layout_engine=ImageFont.Layout.BASIC,
+    )
+    font.set_variation_by_name("Bold")
 
     bbox = draw.textbbox((0, 0), palavra, font=font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]

@@ -5,7 +5,7 @@ description = "Laboratório óptico interativo para criar e aprender autostereog
 requires-python = ">=3.11"
 dependencies = [
     "numpy>=1.26",
-    "pillow>=10.0",
+    "pillow==12.3.0",
     "fastapi>=0.110",
     "pydantic>=2.6",
     "uvicorn[standard]>=0.27",
