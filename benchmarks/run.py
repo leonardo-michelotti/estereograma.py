@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--engine", choices=["v2"], default="v2")
     parser.add_argument("--suite", choices=["canonical"], default="canonical")
     parser.add_argument("--repeat", type=int, default=10, choices=range(1, 51))
-    parser.add_argument("--warmup", type=int, default=2, choices=range(0, 11))
+    parser.add_argument("--warmup", type=int, default=2, choices=range(11))
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--power", choices=["ac", "battery", "unknown"], default="unknown")
     parser.add_argument("--workload", choices=["dedicated", "shared", "unknown"], default="unknown")

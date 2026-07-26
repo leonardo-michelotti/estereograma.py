@@ -18,11 +18,11 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.stereogram.generator_v2 import (  # noqa: E402
+from app.stereogram.generator_v2 import (
     RenderConfigV2,
     render_stereogram_v2,
 )
-from app.stereogram.patterns import coracao_em_camadas, esfera, texto  # noqa: E402
+from app.stereogram.patterns import coracao_em_camadas, esfera, texto
 
 
 def parse_args() -> argparse.Namespace:

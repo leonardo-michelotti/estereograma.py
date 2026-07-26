@@ -8,11 +8,10 @@ import json
 import platform
 import re
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from benchmarks.schema import BenchmarkRecord, HardwareInfo
-
 
 CASE_NAMES = {
     "heart": "coracao",
@@ -84,9 +83,9 @@ def import_records(
     dirty = bool(_git(fork, "status", "--porcelain"))
     source_hash = _source_hash(fork)
     captured = min(
-        datetime.fromisoformat(str(row["capturedAt"]).replace("Z", "+00:00")) for row in raw
+        datetime.fromisoformat(str(row["capturedAt"])) for row in raw
     )
-    run_id = f"webgl-{captured.astimezone(timezone.utc):%Y%m%dT%H%M%SZ}-{sha[:8]}"
+    run_id = f"webgl-{captured.astimezone(UTC):%Y%m%dT%H%M%SZ}-{sha[:8]}"
     records: list[BenchmarkRecord] = []
     for row in raw:
         case = CASE_NAMES.get(str(row.get("case")))
@@ -95,7 +94,7 @@ def import_records(
         records.append(
             BenchmarkRecord(
                 run_id=run_id,
-                captured_at=datetime.fromisoformat(str(row["capturedAt"]).replace("Z", "+00:00")),
+                captured_at=datetime.fromisoformat(str(row["capturedAt"])),
                 git_sha=sha,
                 git_dirty=dirty,
                 source_sha256=source_hash,

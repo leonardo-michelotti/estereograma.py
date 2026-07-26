@@ -186,7 +186,7 @@ def gerar_estereograma(
 
         for x in range(largura):
             z = z_row[x]
-            sep = int(round((1.0 - mu * z) * E / (2.0 - mu * z)))
+            sep = round((1.0 - mu * z) * E / (2.0 - mu * z))
             left = x - sep // 2
             right = left + sep
             if 0 <= left and right < largura:

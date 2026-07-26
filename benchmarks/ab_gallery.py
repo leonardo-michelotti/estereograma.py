@@ -9,7 +9,6 @@ import random
 import shutil
 from pathlib import Path
 
-
 CASES = {
     "coracao": ("04-v2-mosaico-fino.png", "webgl-heart.png"),
     "texto-3d": ("05-v2-texto-3d.png", "webgl-text-3d.png"),

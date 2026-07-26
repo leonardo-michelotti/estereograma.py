@@ -19,7 +19,7 @@ dependencies = [
 dev = [
     "httpx2>=0.28",
     "pytest>=8.0",
-    "ruff>=0.4",
+    "ruff==0.16.0",
 ]
 
 [build-system]

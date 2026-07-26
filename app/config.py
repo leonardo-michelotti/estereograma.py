@@ -6,7 +6,6 @@ import os
 
 from fastapi import Request
 
-
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
 
 

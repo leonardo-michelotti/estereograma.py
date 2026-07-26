@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
 import json
+from datetime import UTC, datetime
 
 from PIL import Image
 
@@ -13,7 +13,7 @@ from benchmarks.schema import BenchmarkRecord, HardwareInfo
 def test_schema_de_benchmark_roundtrip_sem_identificadores_pessoais():
     record = BenchmarkRecord(
         run_id="v2-20260725T120000Z-deadbeef",
-        captured_at=datetime.now(timezone.utc),
+        captured_at=datetime.now(UTC),
         git_sha="deadbeef",
         git_dirty=True,
         source_sha256="a" * 64,

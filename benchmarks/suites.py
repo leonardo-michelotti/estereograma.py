@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, replace
-from typing import Callable, Literal
+from typing import Literal
 
 from PIL import Image
 

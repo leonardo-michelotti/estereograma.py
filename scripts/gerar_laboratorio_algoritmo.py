@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import html
 import sys
+from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
-from typing import Callable
 
 from PIL import Image, ImageDraw
 
@@ -14,12 +14,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.stereogram.generator import gerar_estereograma  # noqa: E402
-from app.stereogram.patterns import coracao_em_camadas, esfera, texto  # noqa: E402
-from app.stereogram.generator_v2 import (  # noqa: E402
+from app.stereogram.generator import gerar_estereograma
+from app.stereogram.generator_v2 import (
     RenderConfigV2,
     render_stereogram_v2,
 )
+from app.stereogram.patterns import coracao_em_camadas, esfera, texto
 
 OUTPUT = ROOT / "exemplos" / "algoritmo-v2"
 

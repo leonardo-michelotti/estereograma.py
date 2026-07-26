@@ -7,7 +7,6 @@ import tempfile
 import time
 from pathlib import Path
 
-
 RENDER_ID = re.compile(r"^[a-f0-9]{32}(?:-depth)?$")
 
 
