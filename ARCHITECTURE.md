@@ -558,7 +558,7 @@ Razões:
 | **F5** | SEO, segurança e empacotamento para deploy | ✅ (aguarda staging no Railway) |
 | **v0.3 · Fase 1** | contratos, Estúdio, cache e renders por URL | ✅ |
 | **Engine V2 · CPU** | estudo, goldens, benchmark e otimização pura | ✅ (452–477 ms de mediana) |
-| **Engine V2 · Cython** | núcleo compilado, fallback e matriz RGB | ✅ (59–62 ms de mediana no spike) |
+| **Engine V2 · Cython** | núcleo compilado, fallback e matriz RGB | ✅ (85–112 ms no marco Linux oficial) |
 | **Engine V2 · WebGL** | fork, coleta GPU e avaliação A/B | ⛔ rejeitada como preview após sessão cega |
 
 ### Iterações de design (D-series)

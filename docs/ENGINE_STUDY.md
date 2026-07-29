@@ -226,8 +226,20 @@ seeds, além de 180×120/1×, 320×200/2× e 640×400/3×; não houve divergênc
 O wheel compilado Linux foi instalado em ambiente vazio e reproduziu o hash
 canônico. Um wheel puro também foi construído no Windows sem compilador. A
 decisão final é **V2 no servidor com núcleo Cython interno e fallback Python**.
-O marco `compiled.jsonl` será coletado somente depois de o código existir em um
-commit limpo, preservando uma linhagem recuperável.
+
+O marco oficial `v2-20260729T022618Z-3ab3cde7` foi coletado pelo GitHub Actions
+sobre o commit limpo `0de06ba`, em CPython 3.12, Linux e quatro CPUs lógicas:
+
+| Caso | mediana | p95 | CV |
+| --- | ---: | ---: | ---: |
+| coração | 111,73 ms | 113,24 ms | 0,85% |
+| texto 3D | 84,99 ms | 89,62 ms | 3,10% |
+| esfera | 94,80 ms | 96,86 ms | 4,13% |
+
+O marco passou amostragem, estabilidade e orçamento da V2. Contra o baseline
+original, a redução de mediana foi de 90,9% no coração, 93,0% no texto e 91,6%
+na esfera. A meta de 100 ms para coração permanece aspiracional e dependente do
+ambiente; não substitui o portão oficial reproduzível.
 
 Um ensaio exploratório posterior mediu 16 renders do coração por nível de
 concorrência. Antes de liberar o GIL nos loops C, duas threads entregaram 17,2
