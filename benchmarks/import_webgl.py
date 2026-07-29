@@ -100,6 +100,7 @@ def import_records(
                 source_sha256=source_hash,
                 engine="webgl",
                 engine_version=sha[:12],
+                implementation="webgl",
                 case=case,
                 config={
                     "stripes_width": int(row["stripesWidth"]),

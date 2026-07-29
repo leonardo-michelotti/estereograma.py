@@ -6,6 +6,9 @@ venv/
 .pytest_cache/
 .ruff_cache/
 *.log
+*.so
+*.pyd
+app/stereogram/_core_v2.c
 .env
 .DS_Store
 
@@ -28,10 +31,12 @@ exemplos/
 benchmarks/data/*.jsonl
 !benchmarks/data/baseline.jsonl
 !benchmarks/data/optimized.jsonl
+!benchmarks/data/compiled.jsonl
 !benchmarks/data/webgl.jsonl
 benchmarks/reports/*.md
 !benchmarks/reports/baseline.md
 !benchmarks/reports/optimized.md
+!benchmarks/reports/compiled.md
 !benchmarks/reports/comparison.md
 !benchmarks/reports/profile-baseline.md
 !benchmarks/reports/profile-optimized.md

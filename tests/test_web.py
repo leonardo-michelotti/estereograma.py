@@ -3,6 +3,7 @@ import re
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.stereogram.generator_v2 import ENGINE_IMPLEMENTATION_V2
 
 client = TestClient(app)
 
@@ -118,7 +119,11 @@ def test_rotas_antigas_redirecionam_sem_expor_esbocos():
 def test_publicacao_tem_saude_seo_e_headers_de_seguranca():
     health = client.get("/healthz")
     assert health.status_code == 200
-    assert health.json() == {"status": "ok"}
+    assert health.json() == {
+        "status": "ok",
+        "engine_version": "v2.0",
+        "engine_implementation": ENGINE_IMPLEMENTATION_V2,
+    }
 
     home = client.get("/")
     assert 'rel="canonical" href="http://testserver/"' in home.text

@@ -19,5 +19,7 @@ Goldens só podem ser regenerados com alteração deliberada de
 
 ## Consequências
 
-O repositório guarda baseline, resultado otimizado e WebGL; medições ad hoc são
-ignoradas. Nenhum hostname, usuário ou identificador pessoal é coletado.
+O repositório guarda baseline, resultado otimizado, futuro marco compilado e
+WebGL; medições ad hoc são ignoradas. O marco compilado só será coletado após o
+núcleo existir em um commit limpo. Nenhum hostname, usuário ou identificador
+pessoal é coletado.

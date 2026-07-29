@@ -13,6 +13,7 @@ from app.config import absolute_url, canonical_url
 from app.routes.renders import create_renders_router
 from app.routes.studio import create_studio_router
 from app.services.generation_service import GenerationService
+from app.stereogram.generator_v2 import ENGINE_IMPLEMENTATION_V2, ENGINE_VERSION_V2
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -59,7 +60,11 @@ async def como_funciona(request: Request) -> HTMLResponse:
 
 @app.get("/healthz", include_in_schema=False)
 async def healthz() -> dict[str, str]:
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "engine_version": ENGINE_VERSION_V2,
+        "engine_implementation": ENGINE_IMPLEMENTATION_V2,
+    }
 
 
 @app.get("/robots.txt", response_class=PlainTextResponse, include_in_schema=False)

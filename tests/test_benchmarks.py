@@ -1,4 +1,5 @@
 import json
+import sys
 from datetime import UTC, datetime
 
 from PIL import Image
@@ -6,12 +7,13 @@ from PIL import Image
 from benchmarks.ab_gallery import build_gallery
 from benchmarks.goldens import verify_goldens
 from benchmarks.import_webgl import _sanitize_hardware
+from benchmarks.report import main as report_main
 from benchmarks.report import outlier_count, percentile_95
 from benchmarks.schema import BenchmarkRecord, HardwareInfo
 
 
-def test_schema_de_benchmark_roundtrip_sem_identificadores_pessoais():
-    record = BenchmarkRecord(
+def _record(*, iteration: int = 1, duration_ms: float = 450.0) -> BenchmarkRecord:
+    return BenchmarkRecord(
         run_id="v2-20260725T120000Z-deadbeef",
         captured_at=datetime.now(UTC),
         git_sha="deadbeef",
@@ -26,14 +28,18 @@ def test_schema_de_benchmark_roundtrip_sem_identificadores_pessoais():
         oversample=3,
         seed=42,
         execution_type="measure",
-        iteration=1,
-        duration_ms=450.0,
+        iteration=iteration,
+        duration_ms=duration_ms,
         rgb_sha256="b" * 64,
         python_version="3.12.0",
         runtime="CPython 3.12",
         operating_system="Windows",
         hardware=HardwareInfo(architecture="AMD64", logical_cpus=8),
     )
+
+
+def test_schema_de_benchmark_roundtrip_sem_identificadores_pessoais():
+    record = _record()
     payload = record.model_dump_json()
     assert "hostname" not in payload
     assert "username" not in payload
@@ -44,6 +50,45 @@ def test_estatisticas_do_relatorio_sao_deterministicas():
     values = [10.0, 11.0, 12.0, 13.0, 100.0]
     assert percentile_95(values) == 82.6
     assert outlier_count(values) == 1
+
+
+def test_relatorio_recusa_amostra_insuficiente(tmp_path, monkeypatch):
+    dataset = tmp_path / "single.jsonl"
+    output = tmp_path / "single.md"
+    dataset.write_text(_record().model_dump_json() + "\n", encoding="utf-8")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["benchmarks.report", str(dataset), "--output", str(output)],
+    )
+
+    assert report_main() == 2
+    report = output.read_text(encoding="utf-8")
+    assert "Runs com amostras insuficientes" in report
+    assert "n=1" in report
+
+
+def test_relatorio_lista_runs_com_cv_reprovado(tmp_path, monkeypatch):
+    dataset = tmp_path / "unstable.jsonl"
+    output = tmp_path / "unstable.md"
+    records = [
+        _record(iteration=index, duration_ms=1.0 if index < 10 else 100.0)
+        for index in range(1, 11)
+    ]
+    dataset.write_text(
+        "".join(record.model_dump_json() + "\n" for record in records),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["benchmarks.report", str(dataset), "--output", str(output)],
+    )
+
+    assert report_main() == 2
+    report = output.read_text(encoding="utf-8")
+    assert "Runs que precisam ser repetidos" in report
+    assert "`coracao`: CV" in report
 
 
 def test_goldens_da_engine_permanecem_pixel_a_pixel_identicos():

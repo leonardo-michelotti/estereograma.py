@@ -47,12 +47,15 @@ def main() -> int:
     args = parse_args()
     records = read_records(args.inputs)
     measured = [record for record in records if record.execution_type != "warmup"]
-    groups: dict[tuple[str, str, str, str, str], list[BenchmarkRecord]] = defaultdict(list)
+    groups: dict[tuple[str, str, str, str | None, str, str], list[BenchmarkRecord]] = (
+        defaultdict(list)
+    )
     for record in measured:
         key = (
             record.run_id,
             record.engine,
             record.engine_version,
+            record.implementation,
             record.case,
             record.execution_type,
         )
@@ -60,15 +63,16 @@ def main() -> int:
 
     rows = []
     invalid_cv = []
+    insufficient = []
     for key, group in sorted(groups.items()):
         values = [record.duration_ms for record in group]
         mean = statistics.fmean(values)
         cv = 0.0 if len(values) == 1 or mean == 0 else statistics.pstdev(values) / mean * 100
         row = {
             "run_id": key[0],
-            "engine": f"{key[1]} {key[2]}",
-            "case": key[3],
-            "execution": key[4],
+            "engine": f"{key[1]} {key[2]}" + (f"/{key[3]}" if key[3] else ""),
+            "case": key[4],
+            "execution": key[5],
             "count": len(values),
             "minimum": min(values),
             "median": statistics.median(values),
@@ -78,7 +82,9 @@ def main() -> int:
         }
         rows.append(row)
         if cv > args.max_cv:
-            invalid_cv.append((key[0], key[3], cv))
+            invalid_cv.append((key[0], key[4], cv))
+        if key[5] in {"measure", "gpu"} and len(values) < 10:
+            insufficient.append((key[0], key[4], key[5], len(values)))
 
     run_records = {record.run_id: record for record in records}
     lines = [
@@ -117,7 +123,7 @@ def main() -> int:
             f"{row['cv']:.2f}% | {row['outliers']} |"
         )
 
-    valid = not invalid_cv
+    valid = not invalid_cv and not insufficient
     v2_records = [record for record in measured if record.engine == "v2"]
     latest_v2_run_id = (
         max(v2_records, key=lambda record: record.captured_at).run_id if v2_records else None
@@ -130,7 +136,8 @@ def main() -> int:
         and row["execution"] == "measure"
     ]
     performance_pass = bool(target_rows) and all(
-        row["median"] < 500 and row["p95"] < 650 for row in target_rows
+        row["count"] >= 10 and row["median"] < 500 and row["p95"] < 650
+        for row in target_rows
     )
     webgl_records = [record for record in measured if record.execution_type == "gpu"]
     latest_webgl_run_id = (
@@ -143,7 +150,9 @@ def main() -> int:
         and row["engine"].startswith("webgl ")
         and row["execution"] == "gpu"
     ]
-    webgl_pass = bool(webgl_rows) and all(row["median"] < 100 for row in webgl_rows)
+    webgl_pass = bool(webgl_rows) and all(
+        row["count"] >= 10 and row["median"] < 100 for row in webgl_rows
+    )
     v2_gate = (
         "aprovada" if performance_pass else ("não atingida" if target_rows else "não aplicável")
     )
@@ -166,32 +175,36 @@ def main() -> int:
             if row["run_id"] == last_run and row["execution"] != "export"
         }
         comparable = sorted(first_rows.keys() & last_rows.keys())
-        lines.extend(
-            [
-                "",
-                "## Comparação entre primeiro e último run",
-                "",
-                "| caso | baseline ms | atual ms | redução da mediana |",
-                "| --- | ---: | ---: | ---: |",
-            ]
-        )
         first_engine = next(row["engine"] for row in rows if row["run_id"] == first_run).split()[0]
         last_engine = next(row["engine"] for row in rows if row["run_id"] == last_run).split()[0]
         if first_engine != last_engine:
             lines.extend(
                 [
                     "",
-                    "> Comparação cruzada de núcleos: CPU inclui a geração da imagem;",
-                    "> GPU mede apenas o shader sincronizado. A exportação aparece separada;",
-                    "> esses números não representam a mesma latência end-to-end.",
+                    "## Comparação entre primeiro e último run",
                     "",
+                    "> Não calculada entre engines diferentes: CPU inclui a geração da imagem,",
+                    "> enquanto GPU mede apenas o shader sincronizado. Exportação e transporte",
+                    "> também são custos separados.",
                 ]
             )
-        for case in comparable:
-            before = first_rows[case]["median"]
-            after = last_rows[case]["median"]
-            reduction = (before - after) / before * 100
-            lines.append(f"| {case} | {before:.2f} | {after:.2f} | {reduction:.1f}% |")
+        else:
+            lines.extend(
+                [
+                    "",
+                    "## Comparação entre primeiro e último run",
+                    "",
+                    "| caso | baseline ms | atual ms | redução da mediana |",
+                    "| --- | ---: | ---: | ---: |",
+                ]
+            )
+            for case in comparable:
+                before = first_rows[case]["median"]
+                after = last_rows[case]["median"]
+                reduction = (before - after) / before * 100
+                lines.append(
+                    f"| {case} | {before:.2f} | {after:.2f} | {reduction:.1f}% |"
+                )
 
     lines.extend(
         [
@@ -210,6 +223,13 @@ def main() -> int:
         lines.append("")
         for run_id, case, cv in invalid_cv:
             lines.append(f"- `{run_id}` / `{case}`: CV {cv:.2f}%")
+        lines.append("")
+
+    if insufficient:
+        lines.append("Runs com amostras insuficientes (mínimo 10):")
+        lines.append("")
+        for run_id, case, execution, count in insufficient:
+            lines.append(f"- `{run_id}` / `{case}` / `{execution}`: n={count}")
         lines.append("")
 
     args.output.parent.mkdir(parents=True, exist_ok=True)

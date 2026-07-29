@@ -21,8 +21,8 @@ site:
 
 1. **Gerador é o coração.** Tudo se apoia no módulo `app/stereogram/`. Site
    sem gerador funcional é inútil.
-2. **Python ponta-a-ponta.** Stack escolhida pra evitar contexto-switch de
-   linguagem e maximizar produtividade.
+2. **API Python ponta-a-ponta.** O produto e o contrato permanecem Python; um
+   núcleo Cython interno acelera loops críticos sem expor uma segunda API.
 3. **Sem banco no MVP.** Galeria é arquivos + YAML; redeploy a cada push.
 4. **JS mínimo.** HTMX cobre toda interatividade do playground.
 5. **Acessibilidade educativa.** Cada estereograma exibido tem revelação
@@ -90,7 +90,7 @@ sequenceDiagram
 | Backend web | **FastAPI** + **Uvicorn** | Async nativo, tipagem forte, devx excelente |
 | Templates | **Jinja2** | Padrão, integra zero-config com FastAPI |
 | Interatividade | **HTMX** local | Form → POST → swap, sem build step nem framework JS |
-| Processamento de imagem | **NumPy** + **Pillow** | Combo padrão; numpy pro algoritmo, pillow pro I/O |
+| Processamento de imagem | **NumPy** + **Pillow** + **Cython** | NumPy/Pillow preparam e finalizam; Cython acelera vínculos, pintura e visibilidade |
 | Persistência | **YAML** em disco | Galeria estática, versionada no git |
 | Estilo | CSS puro | Design system próprio, sem build step |
 | Testes | **pytest** | Padrão |
@@ -103,6 +103,7 @@ sequenceDiagram
 - NumPy ≥ 1.26
 - Pillow ≥ 10.0
 - FastAPI ≥ 0.110
+- Cython ≥ 3.0 somente no build compilado
 
 ---
 
@@ -219,6 +220,8 @@ class RenderConfigV2:
     eye_separation: int = 216
     depth: float = 0.26
     oversample: int = 3
+    mosaic_cell: int = 2
+    depth_blur: float = 0.65
     occlusion: Literal["conflicts", "visibility"] = "visibility"
     texture: Literal["organic", "color", "mono", "mosaic"] = "mosaic"
     seed: int = 24
@@ -296,6 +299,16 @@ superfície mais próxima, e a pintura parte do centro para não favorecer um
 sentido. O cálculo ocorre em largura virtual 3× e termina com downsampling
 Lanczos. A fundamentação, as hipóteses e o método de comparação vivem em
 [`docs/ENGINE_STUDY.md`](docs/ENGINE_STUDY.md).
+
+`_core_v2.pyx` implementa os loops de vínculos, pintura e visibilidade quando o
+build define `ESTEREOGRAMA_BUILD_CYTHON=1`. `generator_v2.py` detecta a extensão
+e recua automaticamente para o caminho Python quando ela não existe ou quando
+`ESTEREOGRAMA_V2_FORCE_PYTHON=1`. Os dois caminhos são pixel-idênticos e
+compartilham `ENGINE_VERSION_V2 = "v2.0"`.
+
+`/healthz` informa `engine_version` e `engine_implementation`. Isso mantém o
+fallback automático, mas torna visível uma queda inesperada de `cython` para
+`python` no ambiente publicado.
 
 ### 4.3 Texturas (`_gerar_textura` em generator.py)
 
@@ -486,6 +499,10 @@ Não há sistema de admin — adicionar obra = commit + push.
 
 Os testes de serviço cobrem validação de texto e cache hit/miss determinístico.
 
+`tests/test_stereogram_v2.py` congela a API pública e a configuração padrão.
+`tests/test_benchmarks.py` verifica os seis goldens. No CI, a suíte roda com a
+extensão Cython compilada e volta a rodar com `ESTEREOGRAMA_V2_FORCE_PYTHON=1`.
+
 ### 6.3 Validação manual visual
 
 Não é automatizável: humano olha o PNG e confirma que vê o 3D. Rodar a cada
@@ -509,7 +526,8 @@ Razões:
 
 ### 7.2 Container e serviço
 
-- `Dockerfile` baseado em Python 3.12 slim e usuário sem privilégios.
+- `Dockerfile` multi-stage baseado em Python 3.12 slim: GCC/Cython existem só
+  no builder; o runtime recebe a extensão pronta e roda sem compilador.
 - Uvicorn em `0.0.0.0:8080`, um worker por causa do cache local efêmero.
 - `railway.toml` define Dockerfile, `/healthz` e política de reinício.
 - `/healthz` é consultado pelo container e pelo Railway antes da promoção.
@@ -537,7 +555,8 @@ Razões:
 | **F5** | SEO, segurança e empacotamento para deploy | ✅ (aguarda staging no Railway) |
 | **v0.3 · Fase 1** | contratos, Estúdio, cache e renders por URL | ✅ |
 | **Engine V2 · CPU** | estudo, goldens, benchmark e otimização pura | ✅ (452–477 ms de mediana) |
-| **Engine V2 · WebGL** | fork, coleta GPU e duas sessões A/B cegas | 🧪 laboratório pronto; coleta pendente |
+| **Engine V2 · Cython** | núcleo compilado, fallback e matriz RGB | ✅ (59–62 ms de mediana no spike) |
+| **Engine V2 · WebGL** | fork, coleta GPU e avaliação A/B | ⛔ rejeitada como preview após sessão cega |
 
 ### Iterações de design (D-series)
 
@@ -568,8 +587,8 @@ Razões:
 | Sistema de contato | Nenhum (e-mail no rodapé) | Se receber spam por scrapping |
 | i18n PT/EN | Só PT-BR | Quando primeiro acesso fora do Brasil |
 | Domínio próprio | domínio Railway inicial | Quando o portfólio for divulgado publicamente |
-| Núcleo compilado | Não adotado; V2 Python/NumPy atingiu 500 ms | Revisitar apenas com novo orçamento ou regressão comprovada |
-| Preview WebGL | Fork experimental separado | Somente após benchmark GPU sincronizado e avaliação A/B cega |
+| Núcleo compilado | Cython interno com fallback Python | Revisitar se build, compatibilidade ou pixels divergirem |
+| Preview WebGL | Não adotado após A/B cego | Somente com nova hipótese perceptiva e novo protocolo aprovado |
 | Extração da engine | Dentro de `app/stereogram/` | Depois de estabilizar API e estratégia de execução |
 | Analytics | Nenhum | Após primeiro mês de tráfego real |
 
@@ -577,9 +596,9 @@ Razões:
 
 ## 10. Riscos conhecidos
 
-1. **Performance do gerador** em depth maps grandes (1920×1080+) — O(n²) em
-   Python puro. Mitigação: limite explícito de dimensões no playground;
-   migrar pra NumPy vetorizado quando necessário.
+1. **Performance do gerador** em depth maps grandes (1920×1080+) — o custo
+   continua crescendo com largura virtual, altura e alcance de visibilidade.
+   Mitigação: limite explícito de dimensões, núcleo Cython e fallback testado.
 
 2. **Uploads maliciosos** (Fase 4) — PIL tem CVEs históricos; PNGs gigantes
    podem causar OOM. Mitigação: validar dimensões e tamanho **antes** de
