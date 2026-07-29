@@ -13,9 +13,9 @@ RUN apt-get update \
 ENV PATH="/opt/venv/bin:${PATH}"
 
 COPY . .
-RUN pip install . "cython>=3.0,<4" \
+RUN pip install . "cython>=3.0,<4" "setuptools>=68" \
     && ESTEREOGRAMA_BUILD_CYTHON=1 python setup.py build_ext --inplace \
-    && pip uninstall --yes cython
+    && pip uninstall --yes cython setuptools
 
 
 FROM python:3.12-slim
