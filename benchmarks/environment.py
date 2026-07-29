@@ -12,7 +12,10 @@ from pathlib import Path
 from benchmarks.schema import HardwareInfo
 
 ROOT = Path(__file__).resolve().parents[1]
-ENGINE_SOURCE = ROOT / "app" / "stereogram" / "generator_v2.py"
+ENGINE_SOURCES = (
+    ROOT / "app" / "stereogram" / "generator_v2.py",
+    ROOT / "app" / "stereogram" / "_core_v2.pyx",
+)
 
 
 def git_sha() -> str:
@@ -38,7 +41,11 @@ def git_dirty() -> bool:
 
 
 def source_sha256() -> str:
-    return hashlib.sha256(ENGINE_SOURCE.read_bytes()).hexdigest()
+    digest = hashlib.sha256()
+    for source in ENGINE_SOURCES:
+        digest.update(source.relative_to(ROOT).as_posix().encode())
+        digest.update(source.read_bytes())
+    return digest.hexdigest()
 
 
 def runtime_metadata(power: str, workload: str) -> dict[str, object]:

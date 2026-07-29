@@ -10,3 +10,5 @@
 *.pdf binary
 *.woff binary
 *.woff2 binary
+*.so binary
+*.pyd binary

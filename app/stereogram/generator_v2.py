@@ -1,7 +1,8 @@
-"""Motor V2 de autostereogramas, ainda não conectado à aplicação web.
+"""Motor V2 de autostereogramas usado pela aplicação e pela API Python.
 
-Este módulo pertence ao núcleo Python, mas a aplicação web continua importando
-``app.stereogram.generator`` até a etapa explícita de integração.
+O contrato público permanece neste módulo. Um núcleo Cython interno acelera os
+loops sequenciais quando foi compilado; a implementação Python pixel-idêntica é
+mantida como fallback para ambientes sem toolchain C.
 
 A implementação parte da descrição matemática de Thimbleby, Inglis & Witten:
 separação binocular simétrica, remoção de pontos ocultos e restrições de
@@ -10,6 +11,7 @@ igualdade entre pixels. O código abaixo é uma implementação independente.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Literal
 
@@ -19,6 +21,21 @@ from PIL import Image, ImageFilter
 OcclusionMode = Literal["conflicts", "visibility"]
 TextureModeV2 = Literal["organic", "color", "mono", "mosaic"]
 ENGINE_VERSION_V2 = "v2.0"
+_FORCE_PYTHON = os.environ.get("ESTEREOGRAMA_V2_FORCE_PYTHON") == "1"
+_render_rows_compiled = None
+_visibility_mask_compiled = None
+if not _FORCE_PYTHON:
+    try:
+        from app.stereogram._core_v2 import render_rows as _render_rows_compiled
+        from app.stereogram._core_v2 import visibility_mask as _visibility_mask_compiled
+    except ImportError:
+        pass
+
+ENGINE_IMPLEMENTATION_V2 = (
+    "cython"
+    if _render_rows_compiled is not None and _visibility_mask_compiled is not None
+    else "python"
+)
 
 LAB_PALETTE = np.array(
     [
@@ -118,7 +135,7 @@ def _prepare_depth(depth_map: Image.Image, config: RenderConfigV2) -> np.ndarray
     return np.asarray(depth, dtype=np.float32) / 255.0
 
 
-def _visibility_mask(depth: np.ndarray, eye_separation: int, mu: float) -> np.ndarray:
+def _visibility_mask_python(depth: np.ndarray, eye_separation: int, mu: float) -> np.ndarray:
     """Marca pontos visíveis simultaneamente pelos dois olhos.
 
     A verificação é feita na resolução de saída e depois ampliada pelo chamador.
@@ -139,6 +156,15 @@ def _visibility_mask(depth: np.ndarray, eye_separation: int, mu: float) -> np.nd
         visible[:, offset : width - offset] &= ~active | (clear_left & clear_right)
 
     return visible
+
+
+def _visibility_mask(depth: np.ndarray, eye_separation: int, mu: float) -> np.ndarray:
+    """Usa o núcleo compilado quando disponível, com fallback pixel-idêntico."""
+    if _visibility_mask_compiled is None:
+        return _visibility_mask_python(depth, eye_separation, mu)
+    return _visibility_mask_compiled(
+        np.ascontiguousarray(depth, dtype=np.float32), eye_separation, mu
+    ).astype(bool, copy=False)
 
 
 def _texture_tile(config: RenderConfigV2, virtual_period: int) -> np.ndarray:
@@ -233,6 +259,48 @@ def _paint_row(
     return texture_row[np.asarray(colors, dtype=np.int32)]
 
 
+def _render_rows_python(
+    left_map: np.ndarray,
+    right_map: np.ndarray,
+    active_map: np.ndarray,
+    texture: np.ndarray,
+    virtual_period: int,
+) -> np.ndarray:
+    height, virtual_width = left_map.shape
+    base_indices = tuple(range(virtual_width))
+    base_colors = tuple(index % virtual_period for index in base_indices)
+    virtual = np.empty((height, virtual_width, 3), dtype=np.uint8)
+    for y in range(height):
+        links = _build_links(
+            left_map[y].tolist(),
+            right_map[y].tolist(),
+            active_map[y].tolist(),
+            base_indices,
+        )
+        virtual[y] = _paint_row(*links, texture[y], base_colors)
+    return virtual
+
+
+def _render_rows(
+    left_map: np.ndarray,
+    right_map: np.ndarray,
+    active_map: np.ndarray,
+    texture: np.ndarray,
+    virtual_period: int,
+) -> np.ndarray:
+    if _render_rows_compiled is None:
+        return _render_rows_python(
+            left_map, right_map, active_map, texture, virtual_period
+        )
+    return _render_rows_compiled(
+        np.ascontiguousarray(left_map, dtype=np.int32),
+        np.ascontiguousarray(right_map, dtype=np.int32),
+        np.ascontiguousarray(active_map, dtype=np.uint8),
+        np.ascontiguousarray(texture, dtype=np.uint8),
+        virtual_period,
+    )
+
+
 def render_stereogram_v2(depth_map: Image.Image, config: RenderConfigV2) -> Image.Image:
     """Renderiza um autostereograma V2 sem depender da aplicação web."""
     _validate(config)
@@ -243,9 +311,6 @@ def render_stereogram_v2(depth_map: Image.Image, config: RenderConfigV2) -> Imag
     virtual_period = separation(0.0, virtual_eye_separation, config.depth)
     texture = _texture_tile(config, virtual_period)
     separations = _separation_map(depth, virtual_eye_separation, config.depth)
-    base_indices = tuple(range(virtual_width))
-    base_colors = tuple(index % virtual_period for index in base_indices)
-
     if config.occlusion == "visibility":
         output_depth = depth[:, ::scale][:, : config.width]
         visibility = _visibility_mask(output_depth, config.eye_separation, config.depth)
@@ -254,15 +319,7 @@ def render_stereogram_v2(depth_map: Image.Image, config: RenderConfigV2) -> Imag
         visibility = None
 
     left_map, right_map, active_map = _constraint_maps(separations, visibility)
-    virtual = np.empty((config.height, virtual_width, 3), dtype=np.uint8)
-    for y in range(config.height):
-        links = _build_links(
-            left_map[y].tolist(),
-            right_map[y].tolist(),
-            active_map[y].tolist(),
-            base_indices,
-        )
-        virtual[y] = _paint_row(*links, texture[y], base_colors)
+    virtual = _render_rows(left_map, right_map, active_map, texture, virtual_period)
 
     high_res = Image.fromarray(virtual, mode="RGB")
     return high_res.resize((config.width, config.height), Image.Resampling.LANCZOS)

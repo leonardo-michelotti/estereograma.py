@@ -72,8 +72,8 @@ Versionamento: [SemVer](https://semver.org/).
 - Estudo aplicado documenta estereopsia, disparidade, oclusão, ecos,
   oversampling, limites de paralelização e a consequência prática de cada
   conceito.
-- Cinco ADRs registram clean-room MIT, goldens, estratégia CPU/WebGL, gatilho
-  de extração e governança dos benchmarks.
+- Seis ADRs registram clean-room MIT, goldens, estratégia CPU/WebGL, gatilho
+  de extração, governança dos benchmarks e núcleo Cython com fallback Python.
 - Pipeline JSONL validado por Pydantic guarda configuração, ambiente
   sanitizado, Git SHA, hash da fonte, duração e hash RGB; relatórios são
   derivados e dados oficiais são imutáveis.
@@ -82,8 +82,16 @@ Versionamento: [SemVer](https://semver.org/).
   900×560/3×, mantendo p95 abaixo de 495 ms e `CV ≤ 5%`.
 - Coleta WebGL por timer query aprovada com 0,76–0,84 ms de mediana GPU,
   exportação PNG separada e `CV ≤ 1,63%`.
-- Galeria A/B cega preparada; integração ao produto continua bloqueada até duas
-  avaliações visuais em dias diferentes.
+- Primeira sessão A/B cega deu 6×3 para a V2; WebGL perdeu coração e esfera e
+  foi rejeitado como preview por decisão do autor.
+- Núcleo Cython interno reduz o spike de 253–267 ms para 58,9–61,5 ms de
+  mediana, preservando seis goldens, 48 combinações e três resoluções extras.
+- Build Linux compila a extensão; desenvolvimento sem compilador mantém fallback
+  Python. CI passa a cobrir ambos os caminhos em Python 3.11, 3.12 e 3.13.
+- `/healthz` expõe versão e implementação efetiva da engine para detectar
+  fallback inesperado em produção.
+- Loops Cython liberam o GIL sobre buffers validados; duas threads quase dobram
+  o throughput no ensaio exploratório sem alterar o hash RGB.
 
 ---
 

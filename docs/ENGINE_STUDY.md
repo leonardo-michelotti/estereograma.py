@@ -1,6 +1,6 @@
 # Engine V2 — estudo aplicado de engenharia
 
-> Estado: CPU e coleta WebGL concluídas; A/B em avaliação · engine de referência: `v2.0` · última revisão: 25/07/2026
+> Estado: núcleo Cython adotado; WebGL rejeitado como preview · engine de referência: `v2.0` · última revisão: 28/07/2026
 
 ## 1. Pergunta de engenharia
 
@@ -102,7 +102,7 @@ fork separado, com a atribuição original.
 | H1 | Pré-calcular `sep(z)` elimina o maior volume de chamadas escalares | cProfile + mediana/p95 antes e depois | manter apenas com RGB idêntico e ganho acima do ruído |
 | H2 | Reutilizar índices e buffers reduz alocações por linha | profiling e benchmark isolado | manter apenas se o ganho superar o CV do baseline |
 | H3 | A V2 pura pode chegar a 500 ms em 900×560/3× | dez repetições aceitas com CV ≤ 5% | dispensar núcleo compilado se a meta for atingida |
-| H4 | Compilar os loops sequenciais supera a V2 pura sem mudar pixels | spikes Numba/Cython | escolher conforme latência, build, cold start e manutenção |
+| H4 | Compilar os loops sequenciais supera a V2 pura sem mudar pixels | spike Cython + matriz RGB | adotar núcleo interno com fallback se build e compatibilidade passarem |
 | H5 | WebGL entrega preview abaixo de 100 ms | tempo GPU sincronizado e exportação separados | considerar apenas como preview se a qualidade não cair |
 
 ## 5. Método experimental
@@ -162,9 +162,9 @@ O baseline `v2-20260726T001320Z-6e9fe828` foi comparado ao marco otimizado
 
 H1 e H2 foram confirmadas: separações e restrições passaram a ser calculadas em
 bloco, índices foram reutilizados e a pintura materializa o RGB por linha. H3
-também foi confirmada. Como a V2 pura ultrapassou os dois portões de performance,
-H4 não foi executada: adicionar Numba ou Cython agora aumentaria build, cold
-start e manutenção sem resolver uma necessidade medida.
+também foi confirmada. Naquele ciclo, H4 não era necessária para cumprir o
+orçamento; ela foi reaberta em 28/07/2026 quando o autor decidiu perseguir uma
+V2 substancialmente mais rápida sem alterar sua saída.
 
 Os seis casos dourados permaneceram RGB idênticos. O relatório comparativo está
 em `benchmarks/reports/comparison.md` e o profiling posterior em
@@ -188,17 +188,54 @@ Intel UHD via ANGLE/Direct3D 11. O tempo vem de timer query da GPU; cada uma das
 | texto 3D | 0,84 ms | 0,87 ms | 1,63% | 47,30 ms |
 | esfera | 0,76 ms | 0,78 ms | 1,35% | 20,60 ms |
 
-H5 passou pelo portão de performance de 100 ms. Isso ainda não aprova a adoção:
-CPU mede geração no servidor, enquanto a coluna GPU mede apenas o shader no
-cliente; exportação, transferência e UX são custos separados. Duas sessões A/B
-cegas, em dias diferentes, ainda avaliarão facilidade de fusão, clareza e
-artefatos. Até esse portão ser cumprido, a decisão vigente é **V2 pura no
-servidor; WebGL experimento aprovado tecnicamente, mas não preview de produto**.
+H5 passou pelo portão de performance de 100 ms. CPU mede geração no servidor,
+enquanto a coluna GPU mede apenas o shader no cliente; exportação, transferência
+e UX são custos separados.
+
+Na primeira sessão A/B cega, o avaliador escolheu B nos três critérios dos três
+casos. Após o reveal, a V2 venceu facilidade de fusão, clareza e artefatos em
+coração e esfera; WebGL venceu os três critérios em texto. O placar foi 6×3 para
+a V2. Por decisão explícita do autor, o estudo foi encerrado com essa evidência:
+**WebGL não será adotado como preview**.
 
 O toolchain herdado do fork também registra 19 achados de `npm audit` (1 baixo,
 9 moderados e 9 altos). O servidor do laboratório deve permanecer local; uma
 eventual adoção exige revisão de dependências separada, sem `audit fix`
 automático que altere a base experimental.
+
+### 8.3 Núcleo Cython
+
+O profiling da V2 otimizada atribuiu aproximadamente metade do render aos loops
+sequenciais de vínculos e pintura. O spike manteve preparação do depth map,
+textura, separações, constraints e Lanczos em Python/NumPy e compilou primeiro
+somente aqueles loops. Depois compilou também a máscara de visibilidade.
+
+Em WSL2, Python 3.12, 900×560/3×, três aquecimentos e 15 repetições com ordem
+alternada, o resultado completo foi:
+
+| Caso | Python mediana | Cython mediana | p95 Cython | aceleração |
+| --- | ---: | ---: | ---: | ---: |
+| coração | 266,87 ms | 61,49 ms | 84,20 ms | 4,34× |
+| texto 3D | 253,08 ms | 58,92 ms | 67,45 ms | 4,30× |
+| esfera | 253,44 ms | 58,94 ms | 77,97 ms | 4,30× |
+
+Os seis goldens permaneceram idênticos. Uma matriz adicional cobriu 48
+combinações de quatro texturas, dois modos de oclusão, três oversamplings e duas
+seeds, além de 180×120/1×, 320×200/2× e 640×400/3×; não houve divergência RGB.
+
+O wheel compilado Linux foi instalado em ambiente vazio e reproduziu o hash
+canônico. Um wheel puro também foi construído no Windows sem compilador. A
+decisão final é **V2 no servidor com núcleo Cython interno e fallback Python**.
+O marco `compiled.jsonl` será coletado somente depois de o código existir em um
+commit limpo, preservando uma linhagem recuperável.
+
+Um ensaio exploratório posterior mediu 16 renders do coração por nível de
+concorrência. Antes de liberar o GIL nos loops C, duas threads entregaram 17,2
+renders/s contra 11,2 em uma thread (1,53×), com p95 de 140 ms. Com `nogil`,
+duas threads entregaram 23,8 renders/s contra 12,0 (1,99×), com p95 de 97 ms;
+quatro threads chegaram a 44,4 renders/s (3,71×). O hash canônico permaneceu
+`dddafe79…`. Esses números são exploratórios e não substituem medição no
+container de produção; o semáforo do serviço continua limitado a dois renders.
 
 ## Referências
 

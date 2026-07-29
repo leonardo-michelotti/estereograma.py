@@ -10,6 +10,7 @@ from time import perf_counter_ns
 
 import numpy as np
 
+from app.stereogram.generator_v2 import ENGINE_IMPLEMENTATION_V2
 from benchmarks.environment import git_dirty, git_sha, runtime_metadata, source_sha256
 from benchmarks.schema import BenchmarkRecord
 from benchmarks.suites import canonical_cases
@@ -62,6 +63,7 @@ def main() -> int:
                     **shared,
                     engine=case.engine,
                     engine_version=case.engine_version,
+                    implementation=ENGINE_IMPLEMENTATION_V2,
                     case=case.slug,
                     config=case.serialized_config(),
                     width=case.config.width,

@@ -24,7 +24,12 @@ GPU-cliente são medidos separadamente porque respondem perguntas distintas.
 
 O marco otimizado `v2-20260726T002043Z-f3e212f7` atingiu medianas de
 451,95–477,46 ms e p95 de 460,53–494,72 ms, com seis goldens RGB idênticos.
-Numba/Cython não foram necessários. O laboratório WebGL foi criado no fork
-público. O marco `webgl-20260726T014002Z-274293c9` atingiu 0,76–0,84 ms de
-mediana GPU e 20,60–47,30 ms de exportação, com `CV ≤ 1,63%`. O portão de
-performance passou; a adoção continua pendente de duas sessões A/B cegas.
+Numba/Cython não eram necessários para atingir aquele orçamento. O laboratório
+WebGL foi criado no fork público. O marco `webgl-20260726T014002Z-274293c9`
+atingiu 0,76–0,84 ms de mediana GPU e 20,60–47,30 ms de exportação, com
+`CV ≤ 1,63%`.
+
+Na primeira sessão A/B cega, a V2 venceu coração e esfera nos três critérios;
+WebGL venceu texto. Por decisão de 28/07/2026, registrada no ADR 0006, WebGL
+não será adotado como preview e a V2 seguirá no servidor com núcleo Cython
+interno e fallback Python.

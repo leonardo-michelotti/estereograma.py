@@ -57,7 +57,8 @@ parâmetros → mapa de profundidade → Engine V2 → PNG + cache
 
 A V2 foi escrita do zero em Python e NumPy. Eu usei os trabalhos de Thimbleby,
 Inglis e Witten como base teórica, mas a implementação e as decisões de
-arquitetura são próprias.
+arquitetura são próprias. Um núcleo Cython interno acelera os loops críticos no
+servidor; o caminho Python pixel-idêntico continua disponível como fallback.
 
 Para cada linha da imagem, ela transforma profundidade em separação binocular,
 descarta pares escondidos por objetos mais próximos, resolve conflitos e só
@@ -86,9 +87,14 @@ Os seis casos de referência continuam idênticos pixel por pixel. O benchmark
 guarda ambiente, configuração, seed, duração e hash RGB sem registrar hostname
 ou usuário.
 
-Também comparei a V2 com um fork WebGL. A GPU é muito mais rápida para o preview,
-mas ainda estou tratando isso como experimento: velocidade sozinha não garante
-que o estereograma seja confortável de enxergar.
+Um spike posterior do núcleo Cython reduziu a mediana para 58,9–61,5 ms e o p95
+para 67,5–84,2 ms no mesmo ensaio alternado, com seis goldens, 48 combinações de
+parâmetros e três resoluções adicionais idênticas. O marco oficial compilado
+será coletado somente sobre um commit limpo.
+
+Também comparei a V2 com um fork WebGL. A GPU foi muito mais rápida, mas perdeu
+para a V2 em coração e esfera na sessão A/B cega. Por isso WebGL não será usado
+como preview: velocidade sozinha não compensa perda perceptiva.
 
 [Ver os dados](benchmarks/data/) ·
 [Ver os relatórios](benchmarks/reports/) ·

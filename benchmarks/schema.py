@@ -28,6 +28,7 @@ class BenchmarkRecord(BaseModel):
     source_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     engine: Literal["legacy", "v2", "webgl"]
     engine_version: str
+    implementation: Literal["python", "cython", "webgl"] | None = None
     case: str
     config: dict[str, int | float | str | bool | None]
     width: int = Field(ge=1)

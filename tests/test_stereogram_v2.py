@@ -1,13 +1,47 @@
+import inspect
+import os
+from concurrent.futures import ThreadPoolExecutor
+
 import numpy as np
 import pytest
 from PIL import Image
 
+import app.stereogram as public_stereogram
 from app.stereogram.generator_v2 import (
+    ENGINE_IMPLEMENTATION_V2,
+    ENGINE_VERSION_V2,
     RenderConfigV2,
     _visibility_mask,
     render_stereogram_v2,
     separation,
 )
+
+
+def test_api_publica_v2_permanece_compativel():
+    assert public_stereogram.ENGINE_VERSION_V2 == ENGINE_VERSION_V2 == "v2.0"
+    assert public_stereogram.RenderConfigV2 is RenderConfigV2
+    assert public_stereogram.render_stereogram_v2 is render_stereogram_v2
+    assert list(inspect.signature(RenderConfigV2).parameters) == [
+        "width",
+        "height",
+        "eye_separation",
+        "depth",
+        "oversample",
+        "mosaic_cell",
+        "depth_blur",
+        "occlusion",
+        "texture",
+        "seed",
+    ]
+    assert list(inspect.signature(render_stereogram_v2).parameters) == [
+        "depth_map",
+        "config",
+    ]
+
+
+def test_ci_pode_exigir_nucleo_compilado():
+    if os.environ.get("ESTEREOGRAMA_EXPECT_COMPILED") == "1":
+        assert ENGINE_IMPLEMENTATION_V2 == "cython"
 
 
 def test_separacao_diminui_quando_objeto_se_aproxima():
@@ -33,6 +67,19 @@ def test_render_experimental_e_deterministico():
     second = render_stereogram_v2(depth, config)
     assert first.size == (180, 120)
     assert np.array_equal(np.asarray(first), np.asarray(second))
+
+
+def test_render_concorrente_preserva_pixels():
+    depth = Image.new("L", (180, 120), 127)
+    config = RenderConfigV2(width=180, height=120, eye_separation=80, oversample=2)
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        outputs = list(
+            executor.map(
+                lambda image: np.asarray(render_stereogram_v2(image, config)),
+                [depth.copy() for _ in range(4)],
+            )
+        )
+    assert all(np.array_equal(outputs[0], output) for output in outputs[1:])
 
 
 @pytest.mark.parametrize("occlusion", ["conflicts", "visibility"])

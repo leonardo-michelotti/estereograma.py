@@ -23,12 +23,26 @@ dev = [
 ]
 
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=68", "cython>=3.0,<4", "numpy>=1.26"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["app*"]
+
+[tool.setuptools.package-data]
+app = [
+    "content/aprender/*.md",
+    "static/css/*.css",
+    "static/fonts/*",
+    "static/img/hero/*.png",
+    "static/img/presets/*.png",
+    "static/img/v03/*.png",
+    "static/js/*",
+    "stereogram/*.pyx",
+    "templates/*.html",
+    "templates/partials/*.html",
+]
 
 [tool.ruff]
 line-length = 100

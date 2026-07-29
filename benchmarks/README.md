@@ -11,8 +11,9 @@ python -m benchmarks.report benchmarks/data/baseline.jsonl \
 ```
 
 `run.py` recusa sobrescrever um dataset. Somente `baseline.jsonl`,
-`optimized.jsonl` e `webgl.jsonl` são versionados. O schema não registra
-hostname ou usuário.
+`optimized.jsonl`, `compiled.jsonl` e `webgl.jsonl` são marcos versionáveis.
+`compiled.jsonl` só deve nascer sobre um commit limpo. O schema registra a
+implementação (`python`, `cython` ou `webgl`) e não registra hostname ou usuário.
 
 O laboratório WebGL produz arquivos brutos no navegador. Eles só entram no
 pipeline depois da validação e do enriquecimento com a linhagem do fork:

@@ -1,15 +1,38 @@
+FROM python:3.12-slim AS builder
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /build
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m venv /opt/venv
+
+ENV PATH="/opt/venv/bin:${PATH}"
+
+COPY . .
+RUN pip install . "cython>=3.0,<4" \
+    && ESTEREOGRAMA_BUILD_CYTHON=1 python setup.py build_ext --inplace \
+    && pip uninstall --yes cython
+
+
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PORT=8000
+    PORT=8000 \
+    PATH="/opt/venv/bin:${PATH}"
 
 WORKDIR /app
 
 RUN addgroup --system app && adduser --system --ingroup app app
 
+COPY --from=builder /opt/venv /opt/venv
 COPY . .
-RUN pip install --no-cache-dir . && chown -R app:app /app
+COPY --from=builder /build/app/stereogram/_core_v2*.so /app/app/stereogram/
+RUN chown -R app:app /app
 
 USER app
 EXPOSE 8000
