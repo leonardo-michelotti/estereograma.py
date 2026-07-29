@@ -229,6 +229,14 @@ decisão final é **V2 no servidor com núcleo Cython interno e fallback Python*
 O marco `compiled.jsonl` será coletado somente depois de o código existir em um
 commit limpo, preservando uma linhagem recuperável.
 
+Um ensaio exploratório posterior mediu 16 renders do coração por nível de
+concorrência. Antes de liberar o GIL nos loops C, duas threads entregaram 17,2
+renders/s contra 11,2 em uma thread (1,53×), com p95 de 140 ms. Com `nogil`,
+duas threads entregaram 23,8 renders/s contra 12,0 (1,99×), com p95 de 97 ms;
+quatro threads chegaram a 44,4 renders/s (3,71×). O hash canônico permaneceu
+`dddafe79…`. Esses números são exploratórios e não substituem medição no
+container de produção; o semáforo do serviço continua limitado a dois renders.
+
 ## Referências
 
 - Bela Julesz, [*Binocular Depth Perception of Computer-Generated Patterns*](https://doi.org/10.1002/j.1538-7305.1960.tb03954.x), 1960.

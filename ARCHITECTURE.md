@@ -502,6 +502,9 @@ Os testes de serviço cobrem validação de texto e cache hit/miss determinísti
 `tests/test_stereogram_v2.py` congela a API pública e a configuração padrão.
 `tests/test_benchmarks.py` verifica os seis goldens. No CI, a suíte roda com a
 extensão Cython compilada e volta a rodar com `ESTEREOGRAMA_V2_FORCE_PYTHON=1`.
+Os loops C liberam o GIL, e um teste concorrente exige que quatro renders
+paralelos continuem produzindo pixels idênticos. O serviço mantém um semáforo de
+duas gerações até que CPU e memória do ambiente publicado sejam medidas.
 
 ### 6.3 Validação manual visual
 

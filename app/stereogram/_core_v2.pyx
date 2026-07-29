@@ -42,18 +42,19 @@ def visibility_mask(
     if max_offset + 1 > width // 2:
         max_offset = width // 2 - 1
 
-    for offset in range(1, max_offset + 1):
-        for y in range(height):
-            for x in range(offset, width - offset):
-                center = depth[y, x]
-                ray_depth = center + (
-                    2.0 * (2.0 - mu32 * center) * offset
-                ) / (mu32 * eye_separation)
-                if ray_depth < 1.0 and not (
-                    depth[y, x - offset] < ray_depth
-                    and depth[y, x + offset] < ray_depth
-                ):
-                    visible[y, x] = 0
+    with nogil:
+        for offset in range(1, max_offset + 1):
+            for y in range(height):
+                for x in range(offset, width - offset):
+                    center = depth[y, x]
+                    ray_depth = center + (
+                        2.0 * (2.0 - mu32 * center) * offset
+                    ) / (mu32 * eye_separation)
+                    if ray_depth < 1.0 and not (
+                        depth[y, x - offset] < ray_depth
+                        and depth[y, x + offset] < ray_depth
+                    ):
+                        visible[y, x] = 0
 
     return visible
 
@@ -79,48 +80,49 @@ def render_rows(
         (height, width, 3), dtype=np.uint8
     )
 
-    for y in range(height):
-        for x in range(width):
-            look_left[x] = x
-            look_right[x] = x
-            colors[x] = x % virtual_period
+    with nogil:
+        for y in range(height):
+            for x in range(width):
+                look_left[x] = x
+                look_right[x] = x
+                colors[x] = x % virtual_period
 
-        for x in range(width):
-            if active_map[y, x] == 0:
-                continue
+            for x in range(width):
+                if active_map[y, x] == 0:
+                    continue
 
-            left = left_map[y, x]
-            right = right_map[y, x]
-            old_left = look_left[right]
-            old_right = look_right[left]
+                left = left_map[y, x]
+                right = right_map[y, x]
+                old_left = look_left[right]
+                old_right = look_right[left]
 
-            if old_left != right and old_left >= left:
-                continue
-            if old_right != left and old_right <= right:
-                continue
+                if old_left != right and old_left >= left:
+                    continue
+                if old_right != left and old_right <= right:
+                    continue
 
-            if old_left != right:
-                look_right[old_left] = old_left
-            if old_right != left:
-                look_left[old_right] = old_right
+                if old_left != right:
+                    look_right[old_left] = old_left
+                if old_right != left:
+                    look_left[old_right] = old_right
 
-            look_left[right] = left
-            look_right[left] = right
+                look_left[right] = left
+                look_right[left] = right
 
-        for x in range(center, width):
-            source = look_left[x]
-            if source != x and source >= center:
-                colors[x] = colors[source]
+            for x in range(center, width):
+                source = look_left[x]
+                if source != x and source >= center:
+                    colors[x] = colors[source]
 
-        for x in range(center - 1, -1, -1):
-            source = look_right[x]
-            if source != x:
-                colors[x] = colors[source]
+            for x in range(center - 1, -1, -1):
+                source = look_right[x]
+                if source != x:
+                    colors[x] = colors[source]
 
-        for x in range(width):
-            color = colors[x]
-            output[y, x, 0] = texture[y, color, 0]
-            output[y, x, 1] = texture[y, color, 1]
-            output[y, x, 2] = texture[y, color, 2]
+            for x in range(width):
+                color = colors[x]
+                output[y, x, 0] = texture[y, color, 0]
+                output[y, x, 1] = texture[y, color, 1]
+                output[y, x, 2] = texture[y, color, 2]
 
     return output

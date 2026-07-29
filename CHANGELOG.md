@@ -90,6 +90,8 @@ Versionamento: [SemVer](https://semver.org/).
   Python. CI passa a cobrir ambos os caminhos em Python 3.11, 3.12 e 3.13.
 - `/healthz` expõe versão e implementação efetiva da engine para detectar
   fallback inesperado em produção.
+- Loops Cython liberam o GIL sobre buffers validados; duas threads quase dobram
+  o throughput no ensaio exploratório sem alterar o hash RGB.
 
 ---
 

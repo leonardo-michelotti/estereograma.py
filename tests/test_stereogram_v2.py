@@ -1,5 +1,6 @@
 import inspect
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pytest
@@ -66,6 +67,19 @@ def test_render_experimental_e_deterministico():
     second = render_stereogram_v2(depth, config)
     assert first.size == (180, 120)
     assert np.array_equal(np.asarray(first), np.asarray(second))
+
+
+def test_render_concorrente_preserva_pixels():
+    depth = Image.new("L", (180, 120), 127)
+    config = RenderConfigV2(width=180, height=120, eye_separation=80, oversample=2)
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        outputs = list(
+            executor.map(
+                lambda image: np.asarray(render_stereogram_v2(image, config)),
+                [depth.copy() for _ in range(4)],
+            )
+        )
+    assert all(np.array_equal(outputs[0], output) for output in outputs[1:])
 
 
 @pytest.mark.parametrize("occlusion", ["conflicts", "visibility"])

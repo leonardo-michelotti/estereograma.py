@@ -22,6 +22,8 @@ resoluções adicionais permaneceram pixel a pixel idênticos.
 A Engine V2 continua sendo a engine oficial no servidor. Seus loops críticos
 passam a ter um núcleo Cython interno, compilado explicitamente nos ambientes
 Linux de CI e container. O caminho Python permanece como fallback automático.
+Os loops compilados liberam o GIL enquanto operam exclusivamente sobre buffers
+já validados, permitindo que renders independentes avancem em paralelo.
 
 `RenderConfigV2`, `render_stereogram_v2`, `ENGINE_VERSION_V2` e os pixels RGB
 não mudam. A implementação compilada não cria uma nova engine nem altera a
@@ -41,3 +43,7 @@ WebGL não será adotado como preview com a evidência perceptiva atual.
   Python e o `.pyx`.
 - O próximo hotspot medido é o mapa NumPy de separações; só será movido para C
   após um novo experimento com ganho relevante e igualdade RGB.
+- Um ensaio exploratório com 16 renders elevou o throughput de 11,2 para 17,2
+  renders/s em duas threads antes de liberar o GIL; depois, passou de 12,0 para
+  23,8 renders/s, preservando o hash RGB. O limite operacional permanece em
+  duas gerações até haver medição no ambiente de deploy.

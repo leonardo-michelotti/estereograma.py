@@ -26,3 +26,14 @@ python experiments/benchmark_cython_core_v2.py \
 Resultados exploratórios não são commitados. O marco oficial
 `benchmarks/data/compiled.jsonl` só deve ser coletado depois de o núcleo existir
 em um commit limpo.
+
+## Concorrência por threads
+
+`load_cython_v2.py` mede throughput, latência e a razão CPU/wall com 1, 2, 4 e
+8 threads. Todos os renders precisam preservar o mesmo hash RGB. O objetivo é
+detectar se o núcleo compilado escala dentro do único worker Uvicorn atual.
+
+```bash
+python experiments/load_cython_v2.py --require-cython \
+  --workers 1,2,4,8 --requests 16 --output /tmp/load-cython-v2.json
+```
