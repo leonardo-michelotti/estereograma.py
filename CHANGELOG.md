@@ -92,6 +92,8 @@ Versionamento: [SemVer](https://semver.org/).
   fallback inesperado em produção.
 - Loops Cython liberam o GIL sobre buffers validados; duas threads quase dobram
   o throughput no ensaio exploratório sem alterar o hash RGB.
+- Marco compilado oficial em Linux registra medianas de 85,0–111,7 ms, p95 de
+  89,6–113,2 ms e `CV ≤ 4,13%`; CI também valida a imagem Docker ponta a ponta.
 
 ---
 

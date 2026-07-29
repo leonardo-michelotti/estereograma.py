@@ -14,6 +14,8 @@ python -m benchmarks.report benchmarks/data/baseline.jsonl \
 `optimized.jsonl`, `compiled.jsonl` e `webgl.jsonl` são marcos versionáveis.
 `compiled.jsonl` só deve nascer sobre um commit limpo. O schema registra a
 implementação (`python`, `cython` ou `webgl`) e não registra hostname ou usuário.
+O marco compilado oficial `v2-20260729T022618Z-3ab3cde7` foi coletado pelo
+workflow manual sobre `0de06ba`, em Linux com quatro CPUs lógicas e `CV ≤ 4,13%`.
 
 O laboratório WebGL produz arquivos brutos no navegador. Eles só entram no
 pipeline depois da validação e do enriquecimento com a linhagem do fork:

@@ -39,8 +39,11 @@ WebGL não será adotado como preview com a evidência perceptiva atual.
   sem exigir compilador.
 - Docker compila o módulo em estágio de build; nenhum deploy é autorizado por
   esta decisão.
+- CI prova que a imagem final não contém GCC/Cython, carrega o núcleo compilado
+  e responde ao healthcheck com `engine_implementation = cython`.
 - Benchmarks novos registram `implementation` e calculam a linhagem sobre o
   Python e o `.pyx`.
+- O marco oficial Linux registra medianas de 85,0–111,7 ms e `CV ≤ 4,13%`.
 - O próximo hotspot medido é o mapa NumPy de separações; só será movido para C
   após um novo experimento com ganho relevante e igualdade RGB.
 - Um ensaio exploratório com 16 renders elevou o throughput de 11,2 para 17,2
